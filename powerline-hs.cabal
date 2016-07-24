@@ -1,0 +1,20 @@
+name:                powerline-hs
+version:             0.1.0.0
+synopsis:            Powerline-compatible shell prompt generator.
+description:         Please see README.md
+homepage:            https://github.com/rdnetto/powerline-hs
+license:             Apache
+license-file:        LICENSE
+author:              Reuben D'Netto
+maintainer:          rdnetto@gmail.com
+copyright:           Reuben D'Netto 2016
+category:            Shell
+build-type:          Simple
+cabal-version:       >=1.10
+
+executable powerline-hs
+  hs-source-dirs:      src
+  main-is:             Main.hs
+  default-language:    Haskell2010
+  build-depends:       base >= 4.7 && < 5
+
