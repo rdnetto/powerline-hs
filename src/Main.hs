@@ -1,11 +1,10 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Main where
 
 import Control.Monad
 import Data.Aeson
 import Data.List (foldl1')
 import Data.Map (union, findWithDefault)
+import Data.Text (pack)
 import System.FilePath ((</>))
 import System.Directory (doesFileExist)
 import qualified Data.ByteString.Lazy as BSL
@@ -28,8 +27,8 @@ main = do
     c2 <- groups <$> loadConfigFile (cfgDir </> "colorschemes/shell" </> csFilename)
     let cs = union c2 c1
 
-    -- themes - more complicated because we need to merge before parsing
-    let default_top_theme = string $ findWithDefault (String "powerline") "default_top_theme" (common config)
+    -- Themes - more complicated because we need to merge before parsing
+    let default_top_theme = string $ findWithDefault (String $ pack "powerline") "default_top_theme" (common config)
     let themeNames = [
                     default_top_theme,
                     "shell" </> "__main__.json",
