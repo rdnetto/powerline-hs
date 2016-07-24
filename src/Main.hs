@@ -9,8 +9,9 @@ import System.FilePath ((</>))
 import System.Directory (doesFileExist)
 import qualified Data.ByteString.Lazy as BSL
 
-import ConfigParser
 import Aeson_Merge
+import ConfigParser
+import Segments
 
 
 main :: IO ()
@@ -21,7 +22,7 @@ main = do
 
     let ExtConfig shellCS shellTheme = shell . ext $ config
 
-    -- color scheme
+    -- Color scheme
     let csFilename = shellCS ++ ".json"
     c1 <- groups <$> loadConfigFile (cfgDir </> "colorschemes" </> csFilename)
     c2 <- groups <$> loadConfigFile (cfgDir </> "colorschemes/shell" </> csFilename)
@@ -38,7 +39,19 @@ main = do
     themesThatExist <- filterM doesFileExist themePaths
     themeCfg <- loadLayeredConfigFiles themesThatExist :: IO ThemeConfig
 
-    print $ show themeCfg
+    -- Generate prompt
+    {-
+     - TODO WIP: Program execution currently takes 370 ms, which is pretty noticeable.
+     -           This means we're going to have to generate a shell script from it.
+     -}
+    let left_prompt = generateSegment <$> left (segments themeCfg)
+    let right_prompt = generateSegment <$> right (segments themeCfg)
+
+    print "Left:"
+    print $ unwords left_prompt
+
+    print "Right:"
+    print $ unwords right_prompt
 
 -- Loads a config file, throwing an exception if there was an error message
 loadConfigFile :: FromJSON a => FilePath -> IO a
@@ -53,7 +66,6 @@ loadLayeredConfigFiles paths = do
     let res = foldl1' mergeJson objs
 
     -- Convert to target type
-    print $ encode res
     return . fromRight . eitherDecode $ encode res
 
 -- Helper function for extracting result
