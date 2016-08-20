@@ -16,7 +16,7 @@ executable powerline-hs
   hs-source-dirs:      src
   main-is:             Main.hs
   other-modules:       Aeson_Merge,
-                       ConfigParser,
+                       ConfigSchema,
                        Segments
   default-language:    Haskell2010
   ghc-options:         -O2 -Wall

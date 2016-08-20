@@ -2,7 +2,7 @@ module Segments where
 
 import Data.Map
 
-import ConfigParser (Segment(..))
+import ConfigSchema (Segment(..))
 
 
 -- segments :: Map String String

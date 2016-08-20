@@ -10,7 +10,7 @@ import System.Directory (doesFileExist)
 import qualified Data.ByteString.Lazy as BSL
 
 import Aeson_Merge
-import ConfigParser
+import ConfigSchema as CS
 import Segments
 
 
