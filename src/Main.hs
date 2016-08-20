@@ -41,13 +41,8 @@ main = do
     themeCfg <- loadLayeredConfigFiles themesThatExist :: IO ThemeConfig
 
     -- Generate prompt
-    {-
-     - TODO WIP: Program execution currently takes 4 ms, which is negligible.
-     -           For comparison, Python takes ~100 ms per side (200 ms), and a bash script takes ~5 ms for command execution (zsh is ~8 ms).
-     -           NOTE: stack exec has *a lot* of overhead - not suitable for timing.
-     -}
-    let left_prompt = generateSegment <$> left (segments themeCfg)
-    let right_prompt = generateSegment <$> right (segments themeCfg)
+    left_prompt  <- generateSegment `mapM` left (segments themeCfg)
+    right_prompt <- generateSegment `mapM` right (segments themeCfg)
 
     putStrLn "Left:"
     putStrLn $ unlines left_prompt

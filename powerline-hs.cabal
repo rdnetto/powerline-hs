@@ -26,6 +26,7 @@ executable powerline-hs
                        containers,
                        directory,
                        filepath,
+                       network,
                        scientific,
                        text,
                        unordered-containers,
