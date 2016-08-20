@@ -107,7 +107,9 @@ data Segment = Segment {
     function    :: String,
     before      :: Maybe String,
     after       :: Maybe String,
-    args        :: Maybe (Map String Value)
+    args        :: Maybe SegmentArgs
 } deriving (Generic, Show)
 instance FromJSON Segment
+
+type SegmentArgs = Map String Value
 

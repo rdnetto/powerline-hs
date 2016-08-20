@@ -42,8 +42,9 @@ main = do
     themeCfg <- loadLayeredConfigFiles themesThatExist :: IO ThemeConfig
 
     -- Generate prompt
-    left_prompt  <- generateSegment `mapM` left (segments themeCfg)
-    right_prompt <- generateSegment `mapM` right (segments themeCfg)
+    let context = ()
+    left_prompt  <- generateSegment context `mapM` left (segments themeCfg)
+    right_prompt <- generateSegment context `mapM` right (segments themeCfg)
 
     putStrLn "Left:"
     putStrLn $ unlines left_prompt
