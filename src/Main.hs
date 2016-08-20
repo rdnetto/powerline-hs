@@ -5,6 +5,7 @@ import Data.Aeson
 import Data.List (foldl1')
 import Data.Map (findWithDefault)
 import Data.Text (pack)
+import System.Environment.XDG.BaseDir (getUserConfigDir)
 import System.FilePath ((</>))
 import System.Directory (doesFileExist)
 import qualified Data.ByteString.Lazy as BSL
@@ -16,7 +17,7 @@ import Segments
 
 main :: IO ()
 main = do
-    let cfgDir = "/home/reuben/.config/powerline/"
+    cfgDir  <- getUserConfigDir "powerline"
     config  <- loadConfigFile $ cfgDir </> "config.json" :: IO MainConfig
     colours <- loadConfigFile $ cfgDir </> "colors.json" :: IO ColourConfig
 

@@ -30,5 +30,6 @@ executable powerline-hs
                        scientific,
                        text,
                        unordered-containers,
-                       vector
+                       vector,
+                       xdg-basedir
 
