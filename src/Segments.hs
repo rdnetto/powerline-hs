@@ -29,6 +29,7 @@ segmentHandlers = fromList [
         ("powerline.segments.common.net.hostname",   simpleHandler $ Just <$> Net.getHostName),
         ("powerline.segments.common.time.date",      simpleHandler $ Just . show <$> getZonedTime),
         ("powerline.segments.common.vcs.branch",     simpleHandler $ gitBranch),
+        ("powerline.segments.common.vcs.stash",      simpleHandler $ gitStashCount),
         ("powerline.segments.shell.cwd",             simpleHandler $ Just <$> getCurrentDirectory),
         ("powerline.segments.shell.jobnum",          simpleHandler $ lookupEnv "_POWERLINE_JOBNUM")
     ]
@@ -59,6 +60,11 @@ gitBranch = do
         -- detached branch
         Just "HEAD" -> readProcess "git" ["rev-parse", "--short", "HEAD"]
         x           -> return x
+
+gitStashCount :: IO (Maybe String)
+gitStashCount = ((=<<) $ showNZ . length . lines) <$> readProcess "git" ["stash", "list"] where
+    showNZ 0 = Nothing
+    showNZ x = Just $ show x
 
 -- Helper function for error handling
 red :: String -> String
