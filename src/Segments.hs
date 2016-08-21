@@ -4,23 +4,16 @@ module Segments(generateSegment) where
 
 import Data.Map.Lazy as Map
 import Data.Maybe (fromMaybe)
-import Data.Time (formatTime, defaultTimeLocale)
-import Data.Time.LocalTime (getZonedTime)
 import Network.BSD as Net
 import System.Directory (getCurrentDirectory)
 import System.Environment (lookupEnv)
 
 import CommandArgs
 import ConfigSchema (Segment(..), SegmentArgs, argLookup)
-import Util
+import Segments.Base
+import qualified Segments.Common as Common
+import qualified Segments.VCS as VCS
 
-
--- TODO: figure out how segments can log failure
-
--- Placeholder for info passed in via command-line arguments
-type PromptContext = CommandArgs
-
-type SegmentHandler = SegmentArgs -> PromptContext -> IO (Maybe String)
 
 -- Map of segments to their handlers
 segmentHandlers :: Map.Map String SegmentHandler
@@ -28,12 +21,12 @@ segmentHandlers = fromList [
         ("powerline.segments.common.env.user",        simpleHandler $ lookupEnv "USER"),
         ("powerline.segments.common.env.virtualenv",  simpleHandler $ lookupEnv "VIRTUAL_ENV"),
         ("powerline.segments.common.net.hostname",    simpleHandler $ Just <$> Net.getHostName),
-        ("powerline.segments.common.time.date",       timeDateSegment),
-        ("powerline.segments.common.vcs.branch",      simpleHandler $ gitBranch),
-        ("powerline.segments.common.vcs.stash",       simpleHandler $ gitStashCount),
+        ("powerline.segments.common.time.date",       Common.timeDateSegment),
+        ("powerline.segments.common.vcs.branch",      VCS.branchSegment),
+        ("powerline.segments.common.vcs.stash",       VCS.stashCountSegment),
         ("powerline.segments.shell.cwd",              simpleHandler $ Just <$> getCurrentDirectory),
         ("powerline.segments.shell.jobnum",           simpleHandler $ lookupEnv "_POWERLINE_JOBNUM"),
-        ("powerline.segments.shell.last_pipe_status", argHandler lastPipeStatus)
+        ("powerline.segments.shell.last_pipe_status", contextHandler lastPipeStatus)
     ]
 
 -- Execute a segment
@@ -49,36 +42,6 @@ generateSegment ctx Segment {..} = do
 -- Default handler
 missingHandler :: SegmentHandler
 missingHandler _ _ = return . Just . red $ "???"
-
--- Wrapper for handlers which don't use any context
-simpleHandler :: IO (Maybe String) -> SegmentHandler
-simpleHandler f _ _ = f
-
-argHandler :: Show a => (CommandArgs -> a) -> SegmentHandler
-argHandler field _ args = return . Just . show $ field args
-
--- TODO: add support for other VCSs
-gitBranch :: IO (Maybe String)
-gitBranch = do
-    abbreviated <- readProcess "git" ["rev-parse", "--short", "--abbrev-ref", "HEAD"]
-
-    case abbreviated of
-        -- detached branch
-        Just "HEAD" -> readProcess "git" ["rev-parse", "--short", "HEAD"]
-        x           -> return x
-
-gitStashCount :: IO (Maybe String)
-gitStashCount = (=<<) (showNZ . length . lines) <$> readProcess "git" ["stash", "list"] where
-    showNZ 0 = Nothing
-    showNZ x = Just $ show x
-
--- powerline.segments.common.time.date
-timeDateSegment :: SegmentHandler
-timeDateSegment args _ = do
-        let isTime = argLookup args "istime" False
-        let fmt = argLookup args "format" "%Y-%m-%d"
-        t <- getZonedTime
-        return $ Just $ formatTime defaultTimeLocale fmt t
 
 -- Helper function for error handling
 red :: String -> String
