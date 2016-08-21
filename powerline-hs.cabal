@@ -16,6 +16,7 @@ executable powerline-hs
   hs-source-dirs:      src
   main-is:             Main.hs
   other-modules:       Aeson_Merge,
+                       CommandArgs,
                        ConfigSchema,
                        Segments,
                        Util
@@ -28,7 +29,9 @@ executable powerline-hs
                        directory,
                        filepath,
                        network,
+                       optparse-applicative,
                        process,
+                       safe,
                        scientific,
                        text,
                        time,

@@ -1,5 +1,6 @@
 module Util where
 
+import Control.Monad (liftM)
 import Data.Char (isSpace)
 import Data.List (dropWhileEnd)
 import System.Exit (ExitCode(..))
@@ -16,4 +17,7 @@ readProcess cmd args = do
 
 rtrim :: String -> String
 rtrim = dropWhileEnd isSpace
+
+liftM2 :: (Monad m1, Monad m2) => (a -> b) -> m1 (m2 a) -> m1 (m2 b)
+liftM2 f = liftM $ liftM f
 

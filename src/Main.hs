@@ -2,21 +2,22 @@ module Main where
 
 import Control.Monad
 import Data.Aeson
+import qualified Data.ByteString.Lazy as BSL
 import Data.List (foldl1')
 import Data.Map (findWithDefault)
 import Data.Text (pack)
+import System.Directory (doesFileExist)
 import System.Environment.XDG.BaseDir (getUserConfigDir)
 import System.FilePath ((</>))
-import System.Directory (doesFileExist)
-import qualified Data.ByteString.Lazy as BSL
 
 import Aeson_Merge
+import CommandArgs
 import ConfigSchema as CS
 import Segments
 
 
 main :: IO ()
-main = do
+main = parseArgs >>= \args -> do
     cfgDir  <- getUserConfigDir "powerline"
     config  <- loadConfigFile $ cfgDir </> "config.json" :: IO MainConfig
     colours <- loadConfigFile $ cfgDir </> "colors.json" :: IO ColourConfig
@@ -42,9 +43,8 @@ main = do
     themeCfg <- loadLayeredConfigFiles themesThatExist :: IO ThemeConfig
 
     -- Generate prompt
-    let context = ()
-    left_prompt  <- generateSegment context `mapM` left (segments themeCfg)
-    right_prompt <- generateSegment context `mapM` right (segments themeCfg)
+    left_prompt  <- generateSegment args `mapM` left (segments themeCfg)
+    right_prompt <- generateSegment args `mapM` right (segments themeCfg)
 
     putStrLn "Left:"
     putStrLn $ unlines left_prompt

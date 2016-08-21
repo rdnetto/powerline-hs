@@ -9,6 +9,7 @@ import Network.BSD as Net
 import System.Directory (getCurrentDirectory)
 import System.Environment (lookupEnv)
 
+import CommandArgs
 import ConfigSchema (Segment(..), SegmentArgs)
 import Util
 
@@ -16,22 +17,22 @@ import Util
 -- TODO: figure out how segments can log failure
 
 -- Placeholder for info passed in via command-line arguments
-type PromptContext = ()
+type PromptContext = CommandArgs
 
 type SegmentHandler = SegmentArgs -> PromptContext -> IO (Maybe String)
-
 
 -- Map of segments to their handlers
 segmentHandlers :: Map.Map String SegmentHandler
 segmentHandlers = fromList [
-        ("powerline.segments.common.env.user",       simpleHandler $ lookupEnv "USER"),
-        ("powerline.segments.common.env.virtualenv", simpleHandler $ lookupEnv "VIRTUAL_ENV"),
-        ("powerline.segments.common.net.hostname",   simpleHandler $ Just <$> Net.getHostName),
-        ("powerline.segments.common.time.date",      simpleHandler $ Just . show <$> getZonedTime),
-        ("powerline.segments.common.vcs.branch",     simpleHandler $ gitBranch),
-        ("powerline.segments.common.vcs.stash",      simpleHandler $ gitStashCount),
-        ("powerline.segments.shell.cwd",             simpleHandler $ Just <$> getCurrentDirectory),
-        ("powerline.segments.shell.jobnum",          simpleHandler $ lookupEnv "_POWERLINE_JOBNUM")
+        ("powerline.segments.common.env.user",        simpleHandler $ lookupEnv "USER"),
+        ("powerline.segments.common.env.virtualenv",  simpleHandler $ lookupEnv "VIRTUAL_ENV"),
+        ("powerline.segments.common.net.hostname",    simpleHandler $ Just <$> Net.getHostName),
+        ("powerline.segments.common.time.date",       simpleHandler $ Just . show <$> getZonedTime),
+        ("powerline.segments.common.vcs.branch",      simpleHandler $ gitBranch),
+        ("powerline.segments.common.vcs.stash",       simpleHandler $ gitStashCount),
+        ("powerline.segments.shell.cwd",              simpleHandler $ Just <$> getCurrentDirectory),
+        ("powerline.segments.shell.jobnum",           simpleHandler $ lookupEnv "_POWERLINE_JOBNUM"),
+        ("powerline.segments.shell.last_pipe_status", argHandler lastPipeStatus)
     ]
 
 -- Execute a segment
@@ -45,11 +46,15 @@ generateSegment ctx Segment {..} = do
                 Just body' -> function ++ ": " ++ fM before ++ body' ++ fM after
 
 -- Default handler
+missingHandler :: SegmentHandler
 missingHandler _ _ = return . Just . red $ "???"
 
 -- Wrapper for handlers which don't use any context
-simpleHandler :: (IO (Maybe String)) -> SegmentHandler
-simpleHandler f = \_ _ -> f
+simpleHandler :: IO (Maybe String) -> SegmentHandler
+simpleHandler f _ _ = f
+
+argHandler :: Show a => (CommandArgs -> a) -> SegmentHandler
+argHandler field _ args = return . Just . show $ field args
 
 -- TODO: add support for other VCSs
 gitBranch :: IO (Maybe String)
@@ -62,7 +67,7 @@ gitBranch = do
         x           -> return x
 
 gitStashCount :: IO (Maybe String)
-gitStashCount = ((=<<) $ showNZ . length . lines) <$> readProcess "git" ["stash", "list"] where
+gitStashCount = (=<<) (showNZ . length . lines) <$> readProcess "git" ["stash", "list"] where
     showNZ 0 = Nothing
     showNZ x = Just $ show x
 
