@@ -16,6 +16,7 @@ executable powerline-hs
   hs-source-dirs:      src
   main-is:             Main.hs
   other-modules:       Aeson_Merge,
+                       Aeson_Unpack,
                        CommandArgs,
                        ConfigSchema,
                        Segments,

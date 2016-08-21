@@ -2,16 +2,18 @@
 
 module ConfigSchema where
 
-import GHC.Generics (Generic)
 import Data.Aeson
 import Data.Aeson.Types
 import Data.Map (Map)
+import qualified Data.Map.Lazy as MapL
 import Data.Maybe (fromJust)
-import Data.Text (Text)
-import Data.Word (Word8)
 import Data.Scientific
+import Data.Text (Text)
 import Data.Vector as V
+import Data.Word (Word8)
+import GHC.Generics (Generic)
 
+import Aeson_Unpack
 
 -- type alias for entries we don't care about
 type DontCare = Object
@@ -112,4 +114,11 @@ data Segment = Segment {
 instance FromJSON Segment
 
 type SegmentArgs = Map String Value
+
+-- Helper function that combines lookup and type conversion.
+argLookup :: ValueType a => SegmentArgs -> String -> a -> a
+argLookup sa k def = res where
+    res = case MapL.lookup k sa of
+            Just x  -> unpackValue x
+            Nothing -> def
 

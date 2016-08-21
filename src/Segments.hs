@@ -4,13 +4,14 @@ module Segments(generateSegment) where
 
 import Data.Map.Lazy as Map
 import Data.Maybe (fromMaybe)
+import Data.Time (formatTime, defaultTimeLocale)
 import Data.Time.LocalTime (getZonedTime)
 import Network.BSD as Net
 import System.Directory (getCurrentDirectory)
 import System.Environment (lookupEnv)
 
 import CommandArgs
-import ConfigSchema (Segment(..), SegmentArgs)
+import ConfigSchema (Segment(..), SegmentArgs, argLookup)
 import Util
 
 
@@ -27,7 +28,7 @@ segmentHandlers = fromList [
         ("powerline.segments.common.env.user",        simpleHandler $ lookupEnv "USER"),
         ("powerline.segments.common.env.virtualenv",  simpleHandler $ lookupEnv "VIRTUAL_ENV"),
         ("powerline.segments.common.net.hostname",    simpleHandler $ Just <$> Net.getHostName),
-        ("powerline.segments.common.time.date",       simpleHandler $ Just . show <$> getZonedTime),
+        ("powerline.segments.common.time.date",       timeDateSegment),
         ("powerline.segments.common.vcs.branch",      simpleHandler $ gitBranch),
         ("powerline.segments.common.vcs.stash",       simpleHandler $ gitStashCount),
         ("powerline.segments.shell.cwd",              simpleHandler $ Just <$> getCurrentDirectory),
@@ -70,6 +71,14 @@ gitStashCount :: IO (Maybe String)
 gitStashCount = (=<<) (showNZ . length . lines) <$> readProcess "git" ["stash", "list"] where
     showNZ 0 = Nothing
     showNZ x = Just $ show x
+
+-- powerline.segments.common.time.date
+timeDateSegment :: SegmentHandler
+timeDateSegment args _ = do
+        let isTime = argLookup args "istime" False
+        let fmt = argLookup args "format" "%Y-%m-%d"
+        t <- getZonedTime
+        return $ Just $ formatTime defaultTimeLocale fmt t
 
 -- Helper function for error handling
 red :: String -> String
