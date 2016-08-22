@@ -1,5 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-
 module Segments(generateSegment) where
 
 import Data.Map.Lazy as Map
@@ -19,13 +17,13 @@ import qualified Segments.VCS as VCS
 segmentHandlers :: Map.Map String SegmentHandler
 segmentHandlers = fromList [
         ("powerline.segments.common.env.user",        simpleHandler "user" $ lookupEnv "USER"),
-        ("powerline.segments.common.env.virtualenv",  simpleHandler "???" $ lookupEnv "VIRTUAL_ENV"),
-        ("powerline.segments.common.net.hostname",    simpleHandler "???" $ Just <$> Net.getHostName),
+        ("powerline.segments.common.env.virtualenv",  simpleHandler "virtualenv" $ lookupEnv "VIRTUAL_ENV"),
+        ("powerline.segments.common.net.hostname",    simpleHandler "hostname" $ Just <$> Net.getHostName),
         ("powerline.segments.common.time.date",       Common.timeDateSegment),
         ("powerline.segments.common.vcs.branch",      VCS.branchSegment),
         ("powerline.segments.common.vcs.stash",       VCS.stashCountSegment),
         ("powerline.segments.shell.cwd",              simpleHandler "cwd" $ Just <$> getCurrentDirectory),
-        ("powerline.segments.shell.jobnum",           simpleHandler "???" $ lookupEnv "_POWERLINE_JOBNUM"),
+        ("powerline.segments.shell.jobnum",           simpleHandler "jobnum" $ lookupEnv "_POWERLINE_JOBNUM"),
         ("powerline.segments.shell.last_pipe_status", Shell.pipeStatusSegment)
     ]
 
