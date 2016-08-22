@@ -42,9 +42,10 @@ instance FromJSON ExtConfig
 
 
 -- colors.json
+type ColourDict = Map String Colour
 
 data ColourConfig = ColourConfig {
-    colors :: Map String Colour,
+    colors :: ColourDict,
     gradients :: DontCare
 } deriving (Generic, Show)
 instance FromJSON ColourConfig

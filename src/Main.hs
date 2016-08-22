@@ -6,6 +6,7 @@ import qualified Data.ByteString.Lazy as BSL
 import Data.List (foldl1')
 import Data.Map (findWithDefault)
 import Data.Text (pack)
+import Rainbow (putChunkLn)
 import System.Directory (doesFileExist)
 import System.Environment.XDG.BaseDir (getUserConfigDir)
 import System.FilePath ((</>))
@@ -21,6 +22,7 @@ import ConfigSchema(
     MainConfig(..),
     ThemeConfig(..),
     )
+import Rendering
 import Segments
 
 
@@ -54,11 +56,14 @@ main = parseArgs >>= \args -> do
     left_prompt  <- generateSegment args `mapM` left (segments themeCfg)
     right_prompt <- generateSegment args `mapM` right (segments themeCfg)
 
+    -- TODO: putChunkLn is slow - see the docs on how to reduce its overhead
+    let renderSeg = renderSegment (colors colours) (groups cs)
+
     putStrLn "Left:"
-    putStrLn . concat $ unlines <$> left_prompt
+    putChunkLn `mapM_` (renderSeg <$> concat left_prompt)
 
     putStrLn "Right:"
-    putStrLn . concat $ unlines <$> right_prompt
+    putChunkLn `mapM_` (renderSeg <$> concat right_prompt)
 
 -- Loads a config file, throwing an exception if there was an error message
 loadConfigFile :: FromJSON a => FilePath -> IO a
