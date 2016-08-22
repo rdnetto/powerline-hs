@@ -22,6 +22,7 @@ executable powerline-hs
                        Segments,
                        Segments.Base,
                        Segments.Common,
+                       Segments.Shell,
                        Segments.VCS,
                        Util
   default-language:    Haskell2010

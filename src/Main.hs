@@ -12,7 +12,15 @@ import System.FilePath ((</>))
 
 import Aeson_Merge
 import CommandArgs
-import ConfigSchema as CS
+import ConfigSchema(
+    ColourConfig(..),
+    ColourSchemeConfig(..),
+    ExtConfig(..),
+    ExtConfigs(..),
+    ForBothSides(..),
+    MainConfig(..),
+    ThemeConfig(..),
+    )
 import Segments
 
 
@@ -47,10 +55,10 @@ main = parseArgs >>= \args -> do
     right_prompt <- generateSegment args `mapM` right (segments themeCfg)
 
     putStrLn "Left:"
-    putStrLn $ unlines left_prompt
+    putStrLn . concat $ unlines <$> left_prompt
 
     putStrLn "Right:"
-    putStrLn $ unlines right_prompt
+    putStrLn . concat $ unlines <$> right_prompt
 
 -- Loads a config file, throwing an exception if there was an error message
 loadConfigFile :: FromJSON a => FilePath -> IO a

@@ -4,11 +4,12 @@ import Segments.Base
 import Util (readProcess)
 
 -- TODO: add support for other VCSs
+-- TODO: hlGroup should depend on branch status (if appropriate args set)
 branchSegment :: SegmentHandler
-branchSegment = simpleHandler gitBranch
+branchSegment = simpleHandler "branch" gitBranch
 
 stashCountSegment :: SegmentHandler
-stashCountSegment = simpleHandler gitStashCount
+stashCountSegment = simpleHandler "stash" gitStashCount
 
 gitBranch :: IO (Maybe String)
 gitBranch = do
