@@ -10,6 +10,7 @@ import Text.ParserCombinators.ReadP (munch1, sepBy1, readP_to_S)
 
 data CommandArgs = CommandArgs {
                     rendererModule :: String,
+                    rendererArgs   :: [String],
                     promptWidth    :: Int,
                     lastExitCode   :: Int,
                     lastPipeStatus :: [Int],
@@ -23,6 +24,10 @@ argParser = CommandArgs
                           <> short 'r'
                           <> metavar "MODULE"
                           <> help "Renderer module. e.g. .zsh"
+                          )
+            <*> multiStrOption (  long "renderer-arg"
+                          <> metavar "ARG=VALUE"
+                          <> help "Additional information for the renderer."
                           )
             <*> intOption (  long "width"
                           <> short 'w'
@@ -53,6 +58,12 @@ parseArgs = execParser opts where
 
 intOption :: Mod OptionFields Int -> Parser Int
 intOption = option auto
+
+-- Parser for a String option that may be specified multiple times
+multiStrOption :: Mod OptionFields [String] -> Parser [String]
+multiStrOption desc = concat <$> some single where
+    single = option (return <$> str) desc
+
 
 -- TODO WIP: the values are being parsed correctly in splintReader, but don't seem to be stored in the record correctly
 
