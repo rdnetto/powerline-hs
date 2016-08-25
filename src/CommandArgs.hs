@@ -15,8 +15,12 @@ data CommandArgs = CommandArgs {
                     lastExitCode   :: Int,
                     lastPipeStatus :: [Int],
                     jobNum         :: Int,
-                    extension      :: String
+                    extension      :: String,
+                    renderSide     :: RenderSide
                 }
+
+data RenderSide = RSLeft | RSRight | RSAbove | RSAboveLeft
+
 
 argParser :: Parser CommandArgs
 argParser = CommandArgs
@@ -44,9 +48,11 @@ argParser = CommandArgs
                           <> help "Space-seperated array of exit codes, corresponding to the commands in one pipe."
                           )
             <*> intOption (  long "jobnum"
+                          <> metavar "INT"
                           <> help "Number of jobs."
                           )
             <*> argument str (metavar "EXT")
+            <*> argument sideReader (metavar "SIDE")
 
 
 parseArgs :: IO CommandArgs
@@ -78,4 +84,19 @@ splintReader = do
     case lastMay $ readP_to_S parseSplint arg of
         Just (x, "") -> return $ read <$> x
         _            -> fail $ '\'' : arg ++ "' is not a space-separated list of ints."
+
+sideReader :: ReadM RenderSide
+sideReader = do
+    arg <- readerAsk
+    let sides = [
+                ("left", RSLeft),
+                ("right", RSRight),
+                ("above", RSAbove),
+                ("aboveleft", RSAboveLeft)
+            ]
+    let validSides = fst <$> sides
+
+    case lookup arg sides of
+        Just x  -> return x
+        Nothing -> fail $ "'" ++ arg ++ "' is not one of: " ++ show validSides
 
