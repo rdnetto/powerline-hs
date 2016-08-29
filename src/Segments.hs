@@ -33,11 +33,9 @@ generateSegment ctx (CS.Segment sFunc sBefore sAfter sArgs)  = do
     let handler = Map.findWithDefault missingHandler sFunc segmentHandlers
     body <- handler (fromMaybe Map.empty sArgs) ctx
 
-    let modifySegText f s = s { segmentText = f (segmentText s) }
-    let concatMaybes ms = concat $ map (fromMaybe "") ms
+    let concatMaybes = concatMap $ fromMaybe ""
 
-    let res = (Segment "" $ sFunc ++ ": ") : (modifySegText (\body' -> concatMaybes [sBefore, Just body', sAfter]) <$> body)
-    return res
+    return $ modifySegText (\body' -> concatMaybes [sBefore, Just body', sAfter]) <$> body
 
 -- Default handler
 missingHandler :: SegmentHandler

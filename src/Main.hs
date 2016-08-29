@@ -1,12 +1,14 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Main where
 
 import Control.Monad
 import Data.Aeson
 import qualified Data.ByteString.Lazy as BSL
+import Data.Function (on, (&))
 import Data.List (foldl1')
-import Data.Map (findWithDefault)
-import Data.Text (pack)
-import Rainbow (putChunkLn)
+import Data.Maybe (fromJust, fromMaybe)
+import Rainbow (putChunk, putChunkLn)
 import System.Directory (doesFileExist)
 import System.Environment.XDG.BaseDir (getUserConfigDir)
 import System.FilePath ((</>))
@@ -16,14 +18,18 @@ import CommandArgs
 import ConfigSchema(
     ColourConfig(..),
     ColourSchemeConfig(..),
+    Divider(..),
     ExtConfig(..),
     ExtConfigs(..),
     ForBothSides(..),
     MainConfig(..),
     ThemeConfig(..),
+    defaultTopTheme,
     )
 import Rendering
 import Segments
+import qualified Segments.Base (Segment(..))
+import Util (intersperseBy)
 
 
 main :: IO ()
@@ -42,14 +48,16 @@ main = parseArgs >>= \args -> do
     cs <- loadLayeredConfigFiles csNames :: IO ColourSchemeConfig
 
     -- Themes - more complicated because we need to merge before parsing
-    let default_top_theme = string $ findWithDefault (String $ pack "powerline") "default_top_theme" (common config)
+    let default_top_theme = defaultTopTheme $ common config
     let themeNames = [
-                    default_top_theme,
+                    default_top_theme ++ ".json",
                     "shell" </> "__main__.json",
                     "shell" </> shellTheme ++ ".json"
                  ]
     let themePaths = (cfgDir </>) . ("themes" </>) <$> themeNames
     themesThatExist <- filterM doesFileExist themePaths
+    -- /home/reuben/.config/powerline/themes/shell/__main__.json
+    -- /home/reuben/.config/powerline/themes/shell/default.json
     themeCfg <- loadLayeredConfigFiles themesThatExist :: IO ThemeConfig
 
     -- Generate prompt
@@ -59,11 +67,24 @@ main = parseArgs >>= \args -> do
     -- TODO: putChunkLn is slow - see the docs on how to reduce its overhead
     let renderSeg = renderSegment (colors colours) (groups cs)
 
+    -- TODO: fix this
+    let numSpaces = fromMaybe 1 $ spaces themeCfg
+
+    -- select the divider - hard for different sections, soft for the same
+    let divCfg = themeCfg & dividers & fromJust & left
+        sGroupEq = (==) `on` Segments.Base.segmentGroup
+        chooseDiv x y | x `sGroupEq` y = x { Segments.Base.segmentText = soft divCfg }
+                      | otherwise      = x { Segments.Base.segmentText = hard divCfg }
+
+    let prepSegs = intersperseBy chooseDiv . concat
+
     putStrLn "Left:"
-    putChunkLn `mapM_` (renderSeg <$> concat left_prompt)
+    putChunk `mapM_` (renderSeg <$> prepSegs left_prompt)
+    putStrLn $ replicate numSpaces ' '
 
     putStrLn "Right:"
-    putChunkLn `mapM_` (renderSeg <$> concat right_prompt)
+    putStr $ replicate numSpaces ' '
+    putChunkLn `mapM_` (renderSeg <$> prepSegs right_prompt)
 
 -- Loads a config file, throwing an exception if there was an error message
 loadConfigFile :: FromJSON a => FilePath -> IO a

@@ -5,6 +5,7 @@ module Segments.Base(
     SegmentHandler,
     argLookup,
     contextHandler,
+    modifySegText,
     simpleHandler,
     ) where
 
@@ -27,6 +28,10 @@ data Segment = Segment {
                     segmentGroup :: String,  -- highlight group used
                     segmentText  :: String   -- text in the segment
                 }
+
+modifySegText :: (String -> String) -> Segment -> Segment
+modifySegText f s = s { segmentText = f (segmentText s) }
+
 
 -- Wrapper for handlers which don't use any context
 simpleHandler :: String -> IO (Maybe String) -> SegmentHandler

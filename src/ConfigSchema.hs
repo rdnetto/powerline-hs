@@ -6,7 +6,7 @@ import Data.Aeson
 import Data.Aeson.Types
 import Data.Map (Map)
 import qualified Data.Map.Lazy as MapL
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, fromMaybe)
 import Data.Scientific
 import Data.Text (Text)
 import Data.Vector as V
@@ -20,8 +20,10 @@ type DontCare = Object
 
 -- config.json
 
+type CommonConfig = Map String Value
+
 data MainConfig = MainConfig {
-    common :: Map String Value,
+    common :: CommonConfig,
     ext    :: ExtConfigs
 } deriving (Generic, Show)
 instance FromJSON MainConfig
@@ -39,6 +41,12 @@ data ExtConfig = ExtConfig {
     theme       :: String
 } deriving (Generic, Show)
 instance FromJSON ExtConfig
+
+defaultTopTheme :: CommonConfig -> String
+defaultTopTheme cfg = fromMaybe def val where
+    -- TODO: this should default to 'powerline' for UTF-8 locales and 'ascii' for others, but locale detection is non-trivial
+    def = "powerline"
+    val = unpackValue <$> MapL.lookup "default_top_theme" cfg
 
 
 -- colors.json
@@ -65,7 +73,6 @@ instance FromJSON Colour where
             [Number c, String h] -> return $ TrueColour (fromJust $ toBoundedInteger c) h
             _                    -> typeMismatch "Colour" (Array arr)
     parseJSON invalid = typeMismatch "Colour" invalid
-
 
 -- colorschemes/*.json
 

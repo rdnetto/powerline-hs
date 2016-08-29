@@ -21,7 +21,7 @@ renderSegment colourDict colourScheme Segment{..} = res where
           then id
           else formatChunk colourDict $ colourScheme `lookup` hlGroup
 
-    res = fmt $ chunk segmentText
+    res = fmt . chunk $ segmentText
 
 
 formatChunk :: CS.ColourDict -> CS.TerminalColour -> ChunkFormatter
