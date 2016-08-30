@@ -49,9 +49,8 @@ renderSegments rInfo@RenderInfo{..} s segments = res where
     chooseDiv x y | x `sGroupEq` y = x { segmentText = CS.soft divCfg }
                   | otherwise      = x { segmentText = CS.hard divCfg }
 
-    prepSegs side' = map (modifySegText . pad numSpaces $ oppositeSide s) . concat
-
-    res = renderSegment rInfo <$> segments
+    pad = appendSide (oppositeSide s) (replicate numSpaces ' ')
+    res = renderSegment rInfo . modifySegText pad <$> segments
 
 -- Helper method for rendering chunks
 putChunks :: RainbowRenderer a -> [Chunk a] -> IO ()
@@ -68,10 +67,10 @@ lookup m k = case Map.lookup k m of
                    Just x  -> x
                    Nothing -> error $ "Unknown key: " ++ show k
 
--- Pads the given side
-pad :: Int -> Side -> String -> String
-pad num SLeft  x = replicate num ' ' ++ x
-pad num SRight x = x ++ replicate num ' '
+-- Appends the first list to the specified side of the second.
+appendSide :: Side -> [a] -> [a] -> [a]
+appendSide SLeft  = (++)
+appendSide SRight = flip (++)
 
 -- Converts a colour from the format used in ConfigSchema to Rainbow's representation
 -- TODO: add support for 24-bit colour. Note that powerline already has a config option for enabling 24-bit color, so this is purely a matter of emitting the right escape codes.
