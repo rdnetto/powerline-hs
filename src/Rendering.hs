@@ -13,7 +13,10 @@ import qualified ConfigSchema as CS
 import Segments.Base (Segment(..), modifySegText)
 import Util
 
+-- Applies formatting to a Chunk
 type ChunkFormatter = Chunk String -> Chunk String
+
+-- Convenience type for a function which renders Chunk diff lists to ByteStrings
 type RainbowRenderer a = Chunk a -> [ByteString] -> [ByteString]
 
 data RenderInfo = RenderInfo {
@@ -34,23 +37,25 @@ renderSegment RenderInfo{..} Segment{..} = res where
 
     res = fmt . chunk $ segmentText
 
--- Render the segments, and the dividers between them.
+-- Renders a prompt of segments, including the required spaces and padding
 renderSegments :: RenderInfo -> Side -> [Segment] -> [Chunk String]
 renderSegments rInfo@RenderInfo{..} s segments = res where
-    {-
-     - Dividers:
-     - * Segments on the left side have *numSpaces* to their right, and vice versa for segments on the right.
-     - * Dividers have their own styling which is different to that of the segments on either side
-     -}
-
-    -- select the divider - hard for different background colours, soft for the same. (Note that this is based on background colour only, not the style itself)
+    -- TODO: select the divider - hard for different background colours, soft for the same. (Note that this is based on background colour only, not the style itself)
+    -- TODO: use the correct styling - not necessarily the same as segments on either side
     divCfg = dividers & side CS.left CS.right s
     sGroupEq = (==) `on` segmentGroup
     chooseDiv x y | x `sGroupEq` y = x { segmentText = CS.soft divCfg }
                   | otherwise      = x { segmentText = CS.hard divCfg }
 
+    -- Padding: segments on the left side have *numSpaces* to their right, and vice versa for segments on the right.
     pad = appendSide (oppositeSide s) (replicate numSpaces ' ')
-    res = renderSegment rInfo . modifySegText pad <$> segments
+
+    -- We need to add a space to the very first / last segment as a special case (dependng on which side we're on)
+    appendSpace = (++ " ")
+    prependSpace = (' ':)
+    padEnd = side (mapFirst $ modifySegText prependSpace) (mapLast $ modifySegText appendSpace) s
+
+    res = map (renderSegment rInfo . modifySegText pad) . padEnd $ segments
 
 -- Helper method for rendering chunks
 putChunks :: RainbowRenderer a -> [Chunk a] -> IO ()

@@ -27,6 +27,19 @@ intersperseBy f (a0:a1:as) = a0 : f a0 a1 : (intersperseBy f $ a1:as)
 intersperseBy _ [x] = [x]
 intersperseBy _ [] = []
 
+-- Applies a function to the first element of a list only.
+mapFirst :: (a -> a) -> [a] -> [a]
+mapFirst _ [] = []
+mapFirst f (x0:xs) = (f x0):xs
+
+-- Applies a function to the last element of a list only.
+-- TODO: this could be improved to do a single pass instead of two.
+mapLast :: (a -> a) -> [a] -> [a]
+mapLast _ [] = []
+mapLast f xs = xs' ++ [f xn] where
+    xs' = init xs
+    xn = last xs
+
 -- Convenient ADT for defining behaviour in terms of which side of the screen we're rendering to
 data Side = SLeft | SRight
 
