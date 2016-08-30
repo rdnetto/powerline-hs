@@ -27,3 +27,13 @@ intersperseBy f (a0:a1:as) = a0 : f a0 a1 : (intersperseBy f $ a1:as)
 intersperseBy _ [x] = [x]
 intersperseBy _ [] = []
 
+-- Convenient ADT for defining behaviour in terms of which side of the screen we're rendering to
+data Side = SLeft | SRight
+
+side :: a -> a -> Side -> a
+side l _ SLeft = l
+side _ r SRight = r
+
+oppositeSide :: Side -> Side
+oppositeSide = side SRight SLeft
+

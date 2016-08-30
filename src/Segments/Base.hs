@@ -27,7 +27,7 @@ type SegmentHandler = SegmentArgs -> PromptContext -> IO [Segment]
 data Segment = Segment {
                     segmentGroup :: String,  -- highlight group used
                     segmentText  :: String   -- text in the segment
-                }
+                } deriving (Show, Eq)
 
 modifySegText :: (String -> String) -> Segment -> Segment
 modifySegText f s = s { segmentText = f (segmentText s) }

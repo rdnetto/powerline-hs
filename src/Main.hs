@@ -5,10 +5,10 @@ module Main where
 import Control.Monad
 import Data.Aeson
 import qualified Data.ByteString.Lazy as BSL
-import Data.Function (on, (&))
+import Data.Function ((&))
 import Data.List (foldl1')
 import Data.Maybe (fromJust, fromMaybe)
-import Rainbow (putChunk, putChunkLn)
+import Rainbow (byteStringMakerFromEnvironment)
 import System.Directory (doesFileExist)
 import System.Environment.XDG.BaseDir (getUserConfigDir)
 import System.FilePath ((</>))
@@ -18,7 +18,6 @@ import CommandArgs
 import ConfigSchema(
     ColourConfig(..),
     ColourSchemeConfig(..),
-    Divider(..),
     ExtConfig(..),
     ExtConfigs(..),
     ForBothSides(..),
@@ -28,8 +27,7 @@ import ConfigSchema(
     )
 import Rendering
 import Segments
-import qualified Segments.Base (Segment(..))
-import Util (intersperseBy)
+import Util
 
 
 main :: IO ()
@@ -56,35 +54,26 @@ main = parseArgs >>= \args -> do
                  ]
     let themePaths = (cfgDir </>) . ("themes" </>) <$> themeNames
     themesThatExist <- filterM doesFileExist themePaths
-    -- /home/reuben/.config/powerline/themes/shell/__main__.json
-    -- /home/reuben/.config/powerline/themes/shell/default.json
     themeCfg <- loadLayeredConfigFiles themesThatExist :: IO ThemeConfig
 
     -- Generate prompt
     left_prompt  <- generateSegment args `mapM` left (segments themeCfg)
     right_prompt <- generateSegment args `mapM` right (segments themeCfg)
 
-    -- TODO: putChunkLn is slow - see the docs on how to reduce its overhead
-    let renderSeg = renderSegment (colors colours) (groups cs)
-
-    -- TODO: fix this
+    -- Actually render the prompts
     let numSpaces = fromMaybe 1 $ spaces themeCfg
-
-    -- select the divider - hard for different sections, soft for the same
-    let divCfg = themeCfg & dividers & fromJust & left
-        sGroupEq = (==) `on` Segments.Base.segmentGroup
-        chooseDiv x y | x `sGroupEq` y = x { Segments.Base.segmentText = soft divCfg }
-                      | otherwise      = x { Segments.Base.segmentText = hard divCfg }
-
-    let prepSegs = intersperseBy chooseDiv . concat
+    let divCfg = themeCfg & dividers & fromJust
+    let renderInfo = RenderInfo (colors colours) (groups cs) divCfg numSpaces
+    term <- byteStringMakerFromEnvironment
 
     putStrLn "Left:"
-    putChunk `mapM_` (renderSeg <$> prepSegs left_prompt)
-    putStrLn $ replicate numSpaces ' '
+    putChunks term . renderSegments renderInfo SLeft $ concat left_prompt
+    putStrLn ""
 
     putStrLn "Right:"
-    putStr $ replicate numSpaces ' '
-    putChunkLn `mapM_` (renderSeg <$> prepSegs right_prompt)
+    putChunks term . renderSegments renderInfo SRight $ concat right_prompt
+    putStrLn ""
+
 
 -- Loads a config file, throwing an exception if there was an error message
 loadConfigFile :: FromJSON a => FilePath -> IO a
