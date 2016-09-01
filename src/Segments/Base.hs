@@ -10,6 +10,7 @@ module Segments.Base(
     ) where
 
 import Data.Maybe (maybeToList)
+import Rainbow (Radiant)
 
 import CommandArgs
 import ConfigSchema (SegmentArgs, argLookup)
@@ -23,10 +24,14 @@ type PromptContext = CommandArgs
 type SegmentHandler = SegmentArgs -> PromptContext -> IO [Segment]
 
 -- A rendered segment.
--- WIP: refactor existing code to work with this
 data Segment = Segment {
                     segmentGroup :: String,  -- highlight group used
                     segmentText  :: String   -- text in the segment
+                }
+             | Divider {
+                    divFore :: Radiant,
+                    divBack :: Radiant,
+                    divText :: String
                 } deriving (Show, Eq)
 
 modifySegText :: (String -> String) -> Segment -> Segment

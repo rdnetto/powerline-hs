@@ -27,6 +27,9 @@ intersperseBy f (a0:a1:as) = a0 : f a0 a1 : (intersperseBy f $ a1:as)
 intersperseBy _ [x] = [x]
 intersperseBy _ [] = []
 
+mapBoth :: (a -> b) -> (a, a) -> (b, b)
+mapBoth f (x, y) = (f x, f y)
+
 -- Applies a function to the first element of a list only.
 mapFirst :: (a -> a) -> [a] -> [a]
 mapFirst _ [] = []
@@ -49,4 +52,10 @@ side _ r SRight = r
 
 oppositeSide :: Side -> Side
 oppositeSide = side SRight SLeft
+
+-- Helper infix function for specifying a default. The second argument should always be Just.
+withDef :: Maybe a -> Maybe a -> a
+withDef (Just x) _ = x
+withDef _ (Just x) = x
+withDef Nothing Nothing = error "withDef called with two Nothings"
 

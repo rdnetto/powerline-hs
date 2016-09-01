@@ -4,8 +4,8 @@
 module Rendering(putChunks, renderSegments, RenderInfo(RenderInfo)) where
 
 import qualified Data.ByteString as BS
-import Data.Function (on)
 import qualified Data.Map.Lazy as Map
+import Data.Maybe (fromJust)
 import Prelude hiding (lookup)
 import Rainbow
 
@@ -28,24 +28,45 @@ data RenderInfo = RenderInfo {
 
 -- Render a segment
 renderSegment :: RenderInfo -> Segment -> Chunk String
-renderSegment RenderInfo{..} Segment{..} = res where
+renderSegment rinfo@RenderInfo{..} Segment{..} = res where
     hlGroup = segmentGroup
 
     fmt = if   hlGroup == ""
           then id
-          else formatChunk colourDict $ colourScheme `lookup` hlGroup
+          else formatChunk colourDict . fromJust $ lookupStyle rinfo hlGroup
 
     res = fmt . chunk $ segmentText
+renderSegment _ Divider{..} = res where
+    res = fore divFore . back divBack $ chunk divText
 
 -- Renders a prompt of segments, including the required spaces and padding
 renderSegments :: RenderInfo -> Side -> [Segment] -> [Chunk String]
 renderSegments rInfo@RenderInfo{..} s segments = res where
-    -- TODO: select the divider - hard for different background colours, soft for the same. (Note that this is based on background colour only, not the style itself)
-    -- TODO: use the correct styling - not necessarily the same as segments on either side
-    divCfg = dividers & side CS.left CS.right s
-    sGroupEq = (==) `on` segmentGroup
-    chooseDiv x y | x `sGroupEq` y = x { segmentText = CS.soft divCfg }
-                  | otherwise      = x { segmentText = CS.hard divCfg }
+    -- TODO: the last segment should have a divider after it as well, using background and background:divider styling
+
+    makeDiv x y = Divider{..} where
+            -- The previous segment is the one closer to the side of the screen we started at
+            prev = side x y s
+            next = side y x s
+
+            hlTuple seg = styleTuple rInfo $ lookupStyle rInfo (segmentGroup seg) `withDef` lookupStyle rInfo "background"
+            (_, prevBack) = hlTuple prev
+            (_, nextBack) = hlTuple next
+
+            -- Foreground and backround colour are taken from the background colours of the adjacent segments
+            -- TODO: this can be overriden with an explicit style for certain segments
+            divFore = prevBack
+            divBack = nextBack
+
+            -- Use hard dividers when the background colours are different, soft when they're the same.
+            -- Note that this is a function of the background colour itself, not just the name.
+            divType = if   prevBack == nextBack
+                      then CS.soft
+                      else CS.hard
+            divText = dividers & side CS.left CS.right s & divType
+
+
+    insertDivs = intersperseBy makeDiv
 
     -- Padding: segments on the left side have *numSpaces* to their right, and vice versa for segments on the right.
     pad = appendSide (oppositeSide s) (replicate numSpaces ' ')
@@ -55,7 +76,7 @@ renderSegments rInfo@RenderInfo{..} s segments = res where
     prependSpace = (' ':)
     padEnd = side (mapFirst $ modifySegText prependSpace) (mapLast $ modifySegText appendSpace) s
 
-    res = map (renderSegment rInfo . modifySegText pad) . padEnd $ segments
+    res = map (renderSegment rInfo) . insertDivs . map (modifySegText pad) . padEnd $ segments
 
 -- Helper method for rendering chunks
 putChunks :: RainbowRenderer a -> [Chunk a] -> IO ()
@@ -63,14 +84,17 @@ putChunks renderer = mapM_ BS.putStr . chunksToByteStrings renderer
 
 formatChunk :: CS.ColourDict -> CS.TerminalColour -> ChunkFormatter
 formatChunk colourDict CS.TerminalColour {..} = fg' . bg' . attrs' where
-    fg' = fore . toRadiant $ colourDict `lookup` fg
-    bg' = back . toRadiant $ colourDict `lookup` bg
+    fg' = fore . toRadiant $ Map.lookup fg colourDict `withDef` error ("Unknown colour: " ++ fg)
+    bg' = back . toRadiant $ Map.lookup bg colourDict `withDef` error ("Unknown colour: " ++ bg)
     attrs' = foldl (.) id $ toChunkFormatter <$> attrs
 
-lookup :: Map.Map String v -> String -> v
-lookup m k = case Map.lookup k m of
-                   Just x  -> x
-                   Nothing -> error $ "Unknown key: " ++ show k
+lookupStyle :: RenderInfo -> String -> Maybe CS.TerminalColour
+lookupStyle RenderInfo{..} k = Map.lookup k colourScheme
+
+-- Converts a TerminalColour to a (foreground, background) tuple
+styleTuple :: RenderInfo -> CS.TerminalColour -> (Radiant, Radiant)
+styleTuple RenderInfo{..} CS.TerminalColour{..} = mapBoth f (fg, bg) where
+    f x = toRadiant $ Map.lookup x colourDict `withDef` Map.lookup "background" colourDict
 
 -- Appends the first list to the specified side of the second.
 appendSide :: Side -> [a] -> [a] -> [a]

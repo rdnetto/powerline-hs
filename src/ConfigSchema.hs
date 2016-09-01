@@ -87,7 +87,7 @@ data TerminalColour = TerminalColour {
     fg :: String,
     bg :: String,
     attrs :: [String]
-} deriving (Generic, Show)
+} deriving (Generic, Show, Eq)
 instance FromJSON TerminalColour
 
 -- themes/*.json
