@@ -2,15 +2,16 @@
 module CommandArgs where
 
 import Data.Char (isDigit, isSpace)
+import qualified Data.Map.Strict as Map
 import Options.Applicative
 import Options.Applicative.Types
 import Safe (lastMay)
-import Text.ParserCombinators.ReadP (munch1, sepBy1, readP_to_S)
+import Text.ParserCombinators.ReadP (char, munch1, sepBy1, readP_to_S)
 
 
 data CommandArgs = CommandArgs {
                     rendererModule :: String,
-                    rendererArgs   :: [String],
+                    rendererArgs   :: RendererArgs,
                     promptWidth    :: Int,
                     lastExitCode   :: Int,
                     lastPipeStatus :: [Int],
@@ -21,6 +22,8 @@ data CommandArgs = CommandArgs {
 
 data RenderSide = RSLeft | RSRight | RSAbove | RSAboveLeft
 
+type RendererArgs = Map.Map String String
+
 
 argParser :: Parser CommandArgs
 argParser = CommandArgs
@@ -29,7 +32,7 @@ argParser = CommandArgs
                           <> metavar "MODULE"
                           <> help "Renderer module. e.g. .zsh"
                           )
-            <*> multiStrOption (  long "renderer-arg"
+            <*> rendererArgsOption (  long "renderer-arg"
                           <> metavar "ARG=VALUE"
                           <> help "Additional information for the renderer."
                           )
@@ -65,13 +68,20 @@ parseArgs = execParser opts where
 intOption :: Mod OptionFields Int -> Parser Int
 intOption = option auto
 
--- Parser for a String option that may be specified multiple times
-multiStrOption :: Mod OptionFields [String] -> Parser [String]
-multiStrOption desc = concat <$> some single where
-    single = option (return <$> str) desc
+-- Parser for a key-value pair option that may be specified multiple times
+rendererArgsOption :: Mod OptionFields (String, String) -> Parser RendererArgs
+rendererArgsOption desc = Map.fromList . concat <$> some single where
+    single = return <$> option keyValuePairReader desc
 
+-- Parses a 'key=value' pair
+keyValuePairReader :: ReadM (String, String)
+keyValuePairReader = do
+    arg <- readerAsk
+    let parser = sepBy1 (munch1 $ (/=) '=') (char '=')
 
--- TODO WIP: the values are being parsed correctly in splintReader, but don't seem to be stored in the record correctly
+    case lastMay $ readP_to_S parser arg of
+        Just ([k, v], "") -> return (k, v)
+        _                 -> fail $ '\'' : arg ++ "' does not have format 'key=value'."
 
 -- Space-seperated list of ints
 -- Based on http://therning.org/magnus/posts/2014-10-13-000-optparse-applicative.html

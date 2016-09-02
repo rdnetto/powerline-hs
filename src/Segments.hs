@@ -3,7 +3,6 @@ module Segments(generateSegment) where
 import qualified Data.Map.Lazy as Map
 import Data.Maybe (fromMaybe)
 import qualified Network.BSD as Net
-import System.Directory (getCurrentDirectory)
 import System.Environment (lookupEnv)
 
 import qualified ConfigSchema as CS
@@ -22,7 +21,7 @@ segmentHandlers = Map.fromList [
         ("powerline.segments.common.time.date",       Common.timeDateSegment),
         ("powerline.segments.common.vcs.branch",      VCS.branchSegment),
         ("powerline.segments.common.vcs.stash",       VCS.stashCountSegment),
-        ("powerline.segments.shell.cwd",              simpleHandler "cwd" $ Just <$> getCurrentDirectory),
+        ("powerline.segments.shell.cwd",              Shell.cwdSegment),
         ("powerline.segments.shell.jobnum",           simpleHandler "jobnum" $ lookupEnv "_POWERLINE_JOBNUM"),
         ("powerline.segments.shell.last_pipe_status", Shell.pipeStatusSegment)
     ]

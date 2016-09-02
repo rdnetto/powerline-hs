@@ -9,12 +9,13 @@ module Segments.Base(
     simpleHandler,
     ) where
 
+import Control.Monad (liftM)
 import Data.Maybe (maybeToList)
 import Rainbow (Radiant)
 
 import CommandArgs
 import ConfigSchema (SegmentArgs, argLookup)
-import Util
+
 
 -- TODO: figure out how segments can log failure
 
@@ -40,7 +41,8 @@ modifySegText f s = s { segmentText = f (segmentText s) }
 
 -- Wrapper for handlers which don't use any context
 simpleHandler :: String -> IO (Maybe String) -> SegmentHandler
-simpleHandler hlGroup f _ _ = maybeToList <$> Segment hlGroup `liftM2` f
+simpleHandler hlGroup f _ _ = maybeToList <$> Segment hlGroup `lift2` f where
+    lift2 = liftM . liftM
 
 -- Wrapper for handlers which show a value provided in the command args
 contextHandler :: Show a => String -> (CommandArgs -> a) -> SegmentHandler
