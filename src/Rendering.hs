@@ -43,18 +43,25 @@ renderSegment _ Divider{..} = res where
 renderSegments :: RenderInfo -> Side -> [Segment] -> [Chunk String]
 renderSegments rInfo@RenderInfo{..} s segments = res where
     -- TODO: the last segment should have a divider after it as well, using background and background:divider styling
+    -- TODO: the dividers seem to have the wrong styling on the RHS
 
-    makeDiv x y = Divider{..} where
+    makeDiv x y = res where
             -- The previous segment is the one closer to the side of the screen we started at
             prev = side x y s
             next = side y x s
 
+            -- Check for an explicit style
+            divStyle = styleTuple rInfo <$> lookupStyle rInfo (segmentGroup prev ++ ":divider")
+            res = case divStyle of
+                       Just (styleFore, styleBack) -> Divider styleFore styleBack divText
+                       Nothing                     -> Divider divFore   divBack   divText
+
+            -- Fallback to inferring style from adjacent segments
             hlTuple seg = styleTuple rInfo $ lookupStyle rInfo (segmentGroup seg) `withDef` lookupStyle rInfo "background"
             (_, prevBack) = hlTuple prev
             (_, nextBack) = hlTuple next
 
             -- Foreground and backround colour are taken from the background colours of the adjacent segments
-            -- TODO: this can be overriden with an explicit style for certain segments
             divFore = prevBack
             divBack = nextBack
 
