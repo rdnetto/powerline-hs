@@ -42,8 +42,6 @@ renderSegment _ Divider{..} = res where
 -- Renders a prompt of segments, including the required spaces and padding
 renderSegments :: RenderInfo -> Side -> [Segment] -> [Chunk String]
 renderSegments rInfo@RenderInfo{..} s segments = res where
-    -- TODO: the last segment should have a divider after it as well, using background and background:divider styling
-
     makeDiv x y = div where
             -- The previous segment is the one closer to the side of the screen we started at
             prev = side x y s
@@ -74,8 +72,14 @@ renderSegments rInfo@RenderInfo{..} s segments = res where
                       else CS.hard
             divText = dividers & side CS.left CS.right s & divType
 
-
+    -- Insert dividers between segments
     insertDivs = intersperseBy makeDiv
+
+    -- Special case to add dividers to the ends.
+    addEndDiv xs = let bg = Segment "background" ""
+                   in case s of
+                           SLeft  -> xs ++ [makeDiv (last xs) bg]
+                           SRight -> makeDiv bg (head xs) : xs
 
     -- Padding: segments on the left side have *numSpaces* to their right, and vice versa for segments on the right.
     pad = appendSide (oppositeSide s) (replicate numSpaces ' ')
@@ -85,7 +89,7 @@ renderSegments rInfo@RenderInfo{..} s segments = res where
     prependSpace = (' ':)
     padEnd = side (mapFirst $ modifySegText prependSpace) (mapLast $ modifySegText appendSpace) s
 
-    res = map (renderSegment rInfo) . insertDivs . map (modifySegText pad) . padEnd $ segments
+    res = map (renderSegment rInfo) . addEndDiv . insertDivs . map (modifySegText pad) . padEnd $ segments
 
 -- Helper method for rendering chunks
 putChunks :: RainbowRenderer a -> [Chunk a] -> IO ()
