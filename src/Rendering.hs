@@ -6,7 +6,7 @@ module Rendering(putChunks, renderSegments, RenderInfo(RenderInfo)) where
 import qualified Data.ByteString as BS
 import qualified Data.Map.Lazy as Map
 import Data.Maybe (fromJust)
-import Prelude hiding (lookup)
+import Prelude hiding (lookup, div)
 import Rainbow
 
 import qualified ConfigSchema as CS
@@ -43,16 +43,18 @@ renderSegment _ Divider{..} = res where
 renderSegments :: RenderInfo -> Side -> [Segment] -> [Chunk String]
 renderSegments rInfo@RenderInfo{..} s segments = res where
     -- TODO: the last segment should have a divider after it as well, using background and background:divider styling
-    -- TODO: the dividers seem to have the wrong styling on the RHS
 
-    makeDiv x y = res where
+    makeDiv x y = div where
             -- The previous segment is the one closer to the side of the screen we started at
             prev = side x y s
             next = side y x s
 
-            -- Check for an explicit style
-            divStyle = styleTuple rInfo <$> lookupStyle rInfo (segmentGroup prev ++ ":divider")
-            res = case divStyle of
+            -- Check for an explicit style if *both* adjacent segments have the same style
+            divStyle = if segmentGroup prev == segmentGroup next
+                          then styleTuple rInfo <$> lookupStyle rInfo (segmentGroup prev ++ ":divider")
+                          else Nothing
+
+            div = case divStyle of
                        Just (styleFore, styleBack) -> Divider styleFore styleBack divText
                        Nothing                     -> Divider divFore   divBack   divText
 
