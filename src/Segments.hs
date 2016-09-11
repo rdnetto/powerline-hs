@@ -4,6 +4,7 @@ import qualified Data.Map.Lazy as Map
 import Data.Maybe (fromMaybe)
 import qualified Network.BSD as Net
 import System.Environment (lookupEnv)
+import System.FilePath (takeFileName)
 
 import qualified ConfigSchema as CS
 import Segments.Base
@@ -16,7 +17,7 @@ import qualified Segments.VCS as VCS
 segmentHandlers :: Map.Map String SegmentHandler
 segmentHandlers = Map.fromList [
         ("powerline.segments.common.env.user",        simpleHandler "user" $ lookupEnv "USER"),
-        ("powerline.segments.common.env.virtualenv",  simpleHandler "virtualenv" $ lookupEnv "VIRTUAL_ENV"),
+        ("powerline.segments.common.env.virtualenv",  simpleHandler "virtualenv" . fmap (fmap takeFileName) $ lookupEnv "VIRTUAL_ENV"),
         ("powerline.segments.common.net.hostname",    simpleHandler "hostname" $ Just <$> Net.getHostName),
         ("powerline.segments.common.time.date",       Common.timeDateSegment),
         ("powerline.segments.common.vcs.branch",      VCS.branchSegment),
