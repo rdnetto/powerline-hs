@@ -11,7 +11,6 @@ import Data.List (foldl1')
 import qualified Data.Map.Lazy as Map
 import Data.Map.Lazy.Merge
 import Data.Maybe (fromJust, fromMaybe)
-import Data.Monoid ((<>))
 import Rainbow (byteStringMakerFromEnvironment)
 import System.Directory (doesFileExist)
 import System.Environment.XDG.BaseDir (getUserConfigDir)
@@ -108,8 +107,8 @@ layerSegments segmentData s = Segment (function s) before' after' args' where
     key = tail . takeExtension $ function s
 
     sd = Map.lookup key segmentData
-    before' = before s <> (sdBefore =<< sd)
-    after'  = after s  <> (sdAfter =<< sd)
+    before' = before s `orElse` (sdBefore =<< sd)
+    after'  = after s  `orElse` (sdAfter =<< sd)
     args' = Just $ leftBiasedMerge (maybeMap $ args s) (maybeMap $ sdArgs =<< sd)
 
     leftBiasedMerge :: SegmentArgs -> SegmentArgs -> SegmentArgs

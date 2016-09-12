@@ -69,3 +69,10 @@ withDef (Just x) _ = x
 withDef _ (Just x) = x
 withDef Nothing Nothing = error "withDef called with two Nothings"
 
+-- Returns the left-most Just, or Nothing.
+-- This is different to mappend because Just "a" <> Just "b" == Just "ab". i.e. it composes automatically.
+orElse :: Maybe a -> Maybe a -> Maybe a
+orElse (Just x) _ = Just x
+orElse Nothing (Just x) = Just x
+orElse Nothing Nothing = Nothing
+

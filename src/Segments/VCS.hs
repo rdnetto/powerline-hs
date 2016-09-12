@@ -8,7 +8,6 @@ import qualified Data.Map as Map
 import Data.Maybe (maybeToList)
 
 import Aeson_Unpack
-import Debug.Trace
 import Segments.Base
 import Util (readProcess)
 
