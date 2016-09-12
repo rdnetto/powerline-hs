@@ -5,7 +5,7 @@ module Rendering(putChunks, renderSegments, RenderInfo(RenderInfo)) where
 
 import qualified Data.ByteString as BS
 import qualified Data.Map.Lazy as Map
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, catMaybes)
 import Prelude hiding (lookup, div)
 import Rainbow
 
@@ -42,35 +42,41 @@ renderSegment _ Divider{..} = res where
 -- Renders a prompt of segments, including the required spaces and padding
 renderSegments :: RenderInfo -> Side -> [Segment] -> [Chunk String]
 renderSegments rInfo@RenderInfo{..} s segments = res where
+    -- NOTE: the equivalent logic is in powerline/renderer.py:540
     makeDiv x y = div where
             -- The previous segment is the one closer to the side of the screen we started at
             prev = side x y s
             next = side y x s
 
-            -- Check for an explicit style if *both* adjacent segments have the same style
-            divStyle = if segmentGroup prev == segmentGroup next
-                          then styleTuple rInfo <$> lookupStyle rInfo (segmentGroup prev ++ ":divider")
-                          else Nothing
+            -- Use hard dividers when the background colours are different, soft when they're the same.
+            -- Note that this is a function of the background colour itself, not just the name.
+            isSoft  = prevBack == nextBack
+            divType = if   isSoft
+                      then CS.soft
+                      else CS.hard
+            divText = dividers & side CS.left CS.right s & divType
 
-            div = case divStyle of
-                       Just (styleFore, styleBack) -> Divider styleFore styleBack divText
-                       Nothing                     -> Divider divFore   divBack   divText
+            -- Only soft dividers can use explicit styling
+            div = if   isSoft
+                  then Divider styleFore styleBack divText
+                  else Divider divFore   divBack   divText
 
-            -- Fallback to inferring style from adjacent segments
+            -- Use explicit styling from previous segment
+            (styleFore, styleBack) = styleTuple rInfo . head . catMaybes $ lookupStyle rInfo <$> [
+                    segmentGroup prev ++ ":divider",    -- segment[segment["divider_highlight_group"] = "time:divider"]
+                    segmentGroup prev                   -- Fallback to the normal styling for that segment
+                ]
+
+            -- Lookup style from adjacent segments
             hlTuple seg = styleTuple rInfo $ lookupStyle rInfo (segmentGroup seg) `withDef` lookupStyle rInfo "background"
             (_, prevBack) = hlTuple prev
             (_, nextBack) = hlTuple next
 
-            -- Foreground and backround colour are taken from the background colours of the adjacent segments
+            -- Foreground and background colour are taken from the background colours of the adjacent segments for hard dividers
             divFore = prevBack
             divBack = nextBack
 
-            -- Use hard dividers when the background colours are different, soft when they're the same.
-            -- Note that this is a function of the background colour itself, not just the name.
-            divType = if   prevBack == nextBack
-                      then CS.soft
-                      else CS.hard
-            divText = dividers & side CS.left CS.right s & divType
+
 
     -- Insert dividers between segments
     insertDivs = intersperseBy makeDiv
