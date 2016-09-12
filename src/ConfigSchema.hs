@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module ConfigSchema where
 
@@ -128,7 +129,13 @@ data SegmentData = SegmentData {
     sdAfter     :: Maybe String,
     sdArgs      :: Maybe SegmentArgs
 } deriving (Generic, Show)
-instance FromJSON SegmentData
+
+-- Explicit definition needed because we can't have duplicate record fields until GHC 8.0
+instance FromJSON SegmentData where
+    parseJSON (Object obj) = SegmentData <$> obj .:? "before"
+                                         <*> obj .:? "after"
+                                         <*> obj .:? "args"
+    parseJSON invalid      = typeMismatch "SegmentData" invalid
 
 type SegmentArgs = Map String Value
 
