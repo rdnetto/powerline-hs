@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module ConfigSchema where
@@ -97,14 +98,14 @@ data ThemeConfig = ThemeConfig {
     spaces          :: Maybe Int,
     dividers        :: Maybe (ForBothSides Divider),
     segments        :: ForBothSides [Segment],
-    segment_data    :: DontCare
+    segment_data    :: Map String SegmentData
 } deriving (Generic, Show)
 instance FromJSON ThemeConfig
 
 data ForBothSides a = ForBothSides {
     left    :: a,
     right   :: a
-} deriving (Generic, Show)
+} deriving (Generic, Show, Functor)
 instance FromJSON a => FromJSON (ForBothSides a)
 
 data Divider = Divider {
@@ -120,6 +121,14 @@ data Segment = Segment {
     args        :: Maybe SegmentArgs
 } deriving (Generic, Show)
 instance FromJSON Segment
+
+-- Like Segment, but used in a different context.
+data SegmentData = SegmentData {
+    sdBefore    :: Maybe String,
+    sdAfter     :: Maybe String,
+    sdArgs      :: Maybe SegmentArgs
+} deriving (Generic, Show)
+instance FromJSON SegmentData
 
 type SegmentArgs = Map String Value
 

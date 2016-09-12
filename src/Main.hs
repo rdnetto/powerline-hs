@@ -1,5 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
+-- TODO: split this file up - too much config logic in here
 module Main where
 
 import Control.Monad
@@ -7,11 +8,14 @@ import Data.Aeson
 import qualified Data.ByteString.Lazy as BSL
 import Data.Function ((&))
 import Data.List (foldl1')
+import qualified Data.Map.Lazy as Map
+import Data.Map.Lazy.Merge
 import Data.Maybe (fromJust, fromMaybe)
+import Data.Monoid ((<>))
 import Rainbow (byteStringMakerFromEnvironment)
 import System.Directory (doesFileExist)
 import System.Environment.XDG.BaseDir (getUserConfigDir)
-import System.FilePath ((</>))
+import System.FilePath ((</>), takeExtension)
 
 import Aeson_Merge
 import CommandArgs
@@ -22,6 +26,9 @@ import ConfigSchema(
     ExtConfigs(..),
     ForBothSides(..),
     MainConfig(..),
+    Segment(..),
+    SegmentArgs,
+    SegmentData(..),
     ThemeConfig(..),
     defaultTopTheme,
     )
@@ -56,9 +63,13 @@ main = parseArgs >>= \args -> do
     themesThatExist <- filterM doesFileExist themePaths
     themeCfg <- loadLayeredConfigFiles themesThatExist :: IO ThemeConfig
 
+    -- Need to segments over segment_data
+    let fmap2 f = fmap (fmap f)
+    let segments' = layerSegments (segment_data themeCfg) `fmap2` segments themeCfg
+
     -- Generate prompt
-    left_prompt  <- generateSegment args `mapM` left (segments themeCfg)
-    right_prompt <- generateSegment args `mapM` right (segments themeCfg)
+    left_prompt  <- generateSegment args `mapM` left  segments'
+    right_prompt <- generateSegment args `mapM` right segments'
 
     -- Actually render the prompts
     let numSpaces = fromMaybe 1 $ spaces themeCfg
@@ -89,6 +100,21 @@ loadLayeredConfigFiles paths = do
 
     -- Convert to target type
     return . fromRight . eitherDecode $ encode res
+
+-- Layer a segment over the corresponding segment data
+layerSegments :: Map.Map String SegmentData -> Segment -> Segment
+layerSegments segmentData s = Segment (function s) before' after' args' where
+    -- for powerline.segments.common.net.hostname, assume the segment has key 'hostname'
+    key = tail . takeExtension $ function s
+
+    sd = Map.lookup key segmentData
+    before' = before s <> (sdBefore =<< sd)
+    after'  = after s  <> (sdAfter =<< sd)
+    args' = Just $ leftBiasedMerge (maybeMap $ args s) (maybeMap $ sdArgs =<< sd)
+
+    leftBiasedMerge :: SegmentArgs -> SegmentArgs -> SegmentArgs
+    leftBiasedMerge = merge preserveMissing preserveMissing $ zipWithMatched (\_ -> flip mergeJson)
+    maybeMap = fromMaybe Map.empty
 
 -- Helper function for extracting result
 fromRight :: Either String b -> b

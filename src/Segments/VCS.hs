@@ -59,7 +59,7 @@ gitStashCount = (=<<) (showNZ . length . lines) <$> readProcess "git" ["stash", 
     showNZ x = Just $ show x
 
 statusColors :: SegmentArgs -> Bool
-statusColors = unpackValue . Map.findWithDefault (Bool True) "status_colors"
+statusColors = unpackValue . Map.findWithDefault (Bool False) "status_colors"
 
 ignoreStatuses :: SegmentArgs -> [String]
 ignoreStatuses = unpackValue . Map.findWithDefault emptyArray "ignore_statuses"
