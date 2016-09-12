@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverlappingInstances #-}
 
 module Aeson_Unpack where
 
@@ -7,6 +8,7 @@ import Data.Aeson (Value(..))
 import Data.Maybe (fromJust)
 import Data.Scientific (isInteger, toBoundedInteger)
 import Data.Text (unpack)
+import Data.Vector (toList)
 
 
 class ValueType a where
@@ -16,11 +18,15 @@ instance ValueType Bool where
     unpackValue (Bool x) = x
     unpackValue x = error $ show x ++ " is not a Bool"
 
+instance ValueType Int where
+    unpackValue (Number x) | isInteger x = fromJust $ toBoundedInteger x
+    unpackValue x = error $ show x ++ " is not an integer"
+
 instance ValueType String where
     unpackValue (String x) = unpack x
     unpackValue x = error $ show x ++ " is not a String"
 
-instance ValueType Int where
-    unpackValue (Number x) | isInteger x = fromJust $ toBoundedInteger x
-    unpackValue x = error $ show x ++ " is not an integer"
+instance ValueType a => ValueType [a] where
+    unpackValue (Array xs) = unpackValue <$> toList xs
+    unpackValue x = error $ show x ++ " is not an Array"
 

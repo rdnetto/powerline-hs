@@ -2,15 +2,17 @@ module Segments.VCS where
 
 import Control.Monad (liftM2)
 import Data.Aeson as Aeson (Value(Bool))
-import Data.Map as Map
+import Data.Aeson.Types (emptyArray)
+import Data.List (isInfixOf)
+import qualified Data.Map as Map
 import Data.Maybe (maybeToList)
 
 import Aeson_Unpack
+import Debug.Trace
 import Segments.Base
 import Util (readProcess)
 
 -- TODO: add support for other VCSs
--- TODO: implement ignore_statuses (list of statuses to ignore)
 branchSegment :: SegmentHandler
 branchSegment = gitBranchSegment
 
@@ -22,23 +24,23 @@ gitBranchSegment args _ = do
     branch <- gitBranch
 
     hlGroup <- if   statusColors args
-               then branchStatusGroup False
+               then branchStatusGroup $ ignoreStatuses args
                else return $ Just "branch"
 
     return . maybeToList $ liftM2 Segment hlGroup branch
 
-branchStatusGroup :: Bool -> IO (Maybe String)
-branchStatusGroup countUntracked = do
+branchStatusGroup :: [String] -> IO (Maybe String)
+branchStatusGroup blacklist = do
     d <- readProcess "git" ["status", "--porcelain"]
 
     return $ do
         dat <- d
 
         let fileStatuses = head . words <$> lines dat
-            isDirty "??" = countUntracked
-            isDirty _    = True
+            isNotMasked s = not $ any (`isInfixOf` s) blacklist
+            isDirty = const True
 
-        return $ if   any isDirty fileStatuses
+        return $ if   any isDirty (filter isNotMasked fileStatuses)
                  then "branch_dirty"
                  else "branch_clean"
 
@@ -57,6 +59,8 @@ gitStashCount = (=<<) (showNZ . length . lines) <$> readProcess "git" ["stash", 
     showNZ x = Just $ show x
 
 statusColors :: SegmentArgs -> Bool
-statusColors = unpackValue . Map.findWithDefault (Bool False) "status_colors"
+statusColors = unpackValue . Map.findWithDefault (Bool True) "status_colors"
 
+ignoreStatuses :: SegmentArgs -> [String]
+ignoreStatuses = unpackValue . Map.findWithDefault emptyArray "ignore_statuses"
 
