@@ -1,6 +1,5 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverlappingInstances #-}
 
 module Aeson_Unpack where
 
@@ -22,7 +21,7 @@ instance ValueType Int where
     unpackValue (Number x) | isInteger x = fromJust $ toBoundedInteger x
     unpackValue x = error $ show x ++ " is not an integer"
 
-instance ValueType String where
+instance {-# OVERLAPPING #-} ValueType String where
     unpackValue (String x) = unpack x
     unpackValue x = error $ show x ++ " is not a String"
 
