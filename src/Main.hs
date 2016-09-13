@@ -62,27 +62,35 @@ main = parseArgs >>= \args -> do
     themesThatExist <- filterM doesFileExist themePaths
     themeCfg <- loadLayeredConfigFiles themesThatExist :: IO ThemeConfig
 
-    -- Need to segments over segment_data
-    let fmap2 f = fmap (fmap f)
-    let segments' = layerSegments (segment_data themeCfg) `fmap2` segments themeCfg
-
-    -- Generate prompt
-    left_prompt  <- generateSegment args `mapM` left  segments'
-    right_prompt <- generateSegment args `mapM` right segments'
-
-    -- Actually render the prompts
+    -- Needed for rendering
     let numSpaces = fromMaybe 1 $ spaces themeCfg
     let divCfg = themeCfg & dividers & fromJust
     let renderInfo = RenderInfo (colors colours) (groups cs) divCfg numSpaces
     term <- byteStringMakerFromEnvironment
 
-    putStrLn "Left:"
-    putChunks term . renderSegments renderInfo SLeft $ concat left_prompt
-    putStrLn ""
+    case debugSegment args of
+        Just segName -> do
+            segs <- generateSegment args . layerSegments (segment_data themeCfg) $ Segment segName Nothing Nothing Nothing
+            putChunks term $ renderSegments renderInfo SLeft segs
+            putStrLn ""
 
-    putStrLn "Right:"
-    putChunks term . renderSegments renderInfo SRight $ concat right_prompt
-    putStrLn ""
+        Nothing -> do
+            -- Need to segments over segment_data
+            let fmap2 f = fmap (fmap f)
+            let segments' = layerSegments (segment_data themeCfg) `fmap2` segments themeCfg
+
+            -- Generate prompt
+            left_prompt  <- generateSegment args `mapM` left  segments'
+            right_prompt <- generateSegment args `mapM` right segments'
+
+            -- Actually render the prompts
+            putStrLn "Left:"
+            putChunks term . renderSegments renderInfo SLeft $ concat left_prompt
+            putStrLn ""
+
+            putStrLn "Right:"
+            putChunks term . renderSegments renderInfo SRight $ concat right_prompt
+            putStrLn ""
 
 
 -- Loads a config file, throwing an exception if there was an error message

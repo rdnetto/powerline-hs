@@ -16,6 +16,7 @@ data CommandArgs = CommandArgs {
                     lastExitCode   :: Int,
                     lastPipeStatus :: [Int],
                     jobNum         :: Int,
+                    debugSegment   :: Maybe String,
                     extension      :: String,
                     renderSide     :: RenderSide
                 }
@@ -53,6 +54,12 @@ argParser = CommandArgs
             <*> intOption (  long "jobnum"
                           <> metavar "INT"
                           <> help "Number of jobs."
+                          )
+            <*> optional (strOption $
+                             long "debug"
+                          <> short 'd'
+                          <> metavar "SEGMENT"
+                          <> help "Display only the specified segment. Used for debugging. Must be a fully qualified name. e.g powerline.segments.shell.cwd"
                           )
             <*> argument str (metavar "EXT")
             <*> argument sideReader (metavar "SIDE")
