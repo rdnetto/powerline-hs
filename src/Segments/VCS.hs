@@ -11,6 +11,8 @@ import Aeson_Unpack
 import Segments.Base
 import Util (readProcess)
 
+-- TODO: use a library instead of reinventing the wheel
+
 -- TODO: add support for other VCSs
 branchSegment :: SegmentHandler
 branchSegment = gitBranchSegment
