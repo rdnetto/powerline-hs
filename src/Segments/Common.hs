@@ -1,7 +1,7 @@
 module Segments.Common  where
 
 import Data.Time (formatTime, defaultTimeLocale)
-import Data.Time.Clock (getCurrentTime, diffUTCTime, NominalDiffTime, UTCTime)
+import Data.Time.Clock (diffUTCTime, NominalDiffTime)
 import Data.Time.Clock.POSIX (getPOSIXTime, POSIXTime, posixSecondsToUTCTime)
 import Data.Time.LocalTime (getZonedTime)
 

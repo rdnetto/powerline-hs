@@ -19,6 +19,7 @@ executable powerline-hs
                        Aeson_Unpack,
                        CommandArgs,
                        ConfigSchema,
+                       Format,
                        Rendering,
                        Segments,
                        Segments.Base,
