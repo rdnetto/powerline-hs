@@ -19,6 +19,7 @@ segmentHandlers = Map.fromList [
         ("powerline.segments.common.env.user",        simpleHandler "user" $ lookupEnv "USER"),
         ("powerline.segments.common.env.virtualenv",  simpleHandler "virtualenv" . fmap (fmap takeFileName) $ lookupEnv "VIRTUAL_ENV"),
         ("powerline.segments.common.net.hostname",    simpleHandler "hostname" $ Just <$> Net.getHostName),
+        ("powerline.segments.common.sys.uptime",      Common.uptimeSegment),
         ("powerline.segments.common.time.date",       Common.timeDateSegment),
         ("powerline.segments.common.vcs.branch",      VCS.branchSegment),
         ("powerline.segments.common.vcs.stash",       VCS.stashCountSegment),

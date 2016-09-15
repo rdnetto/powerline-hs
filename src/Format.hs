@@ -7,7 +7,7 @@
 --
 -- See: https://docs.python.org/3.3/library/string.html#format-specification-mini-language
 
-module Format (format) where
+module Format (pyFormat) where
 
 import Data.Char (isDigit)
 import Data.Maybe (fromMaybe)
@@ -47,8 +47,8 @@ data NumericSign = Always       -- +
                deriving (Eq, Show)
 
 -- Entry point: converts the format String and calls printf with it
-format :: PrintfType r => PyFormatStr -> r
-format = printf . concatMap convertFmt . parseFmt
+pyFormat :: PrintfType r => PyFormatStr -> r
+pyFormat = printf . concatMap convertFmt . parseFmt
 
 parseFmt :: PyFormatStr -> [FormatSegment]
 parseFmt fmt = res where
@@ -126,9 +126,6 @@ mapParser dict = do
 -- Parses an unsigned int
 parseInt :: ReadP Int
 parseInt = read <$> munch1 isDigit
-
-convFmt :: [FormatSegment] -> HsFormatStr
-convFmt = undefined
 
 maybeParse :: ReadP a -> ReadP (Maybe a)
 maybeParse p = option Nothing (Just <$> p)
