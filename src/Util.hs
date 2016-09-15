@@ -2,6 +2,7 @@ module Util where
 
 import Data.Char (isSpace)
 import Data.List (dropWhileEnd)
+import Data.Text as Text (unpack, pack, replace)
 import System.Exit (ExitCode(..))
 import System.Process (readProcessWithExitCode)
 
@@ -16,6 +17,9 @@ readProcess cmd args = do
 
 rtrim :: String -> String
 rtrim = dropWhileEnd isSpace
+
+replace :: String -> String -> String -> String
+replace old new s = unpack $ Text.replace (pack old) (pack new) (pack s)
 
 -- Inserts an element between each adjacent pair of elements, whch is the result of applying a function to those elements.
 intersperseBy :: (a -> a -> a) -> [a] -> [a]
