@@ -6,6 +6,7 @@ import Data.Time (formatTime, defaultTimeLocale)
 import Data.Time.Clock (diffUTCTime, NominalDiffTime)
 import Data.Time.Clock.POSIX (getPOSIXTime, POSIXTime, posixSecondsToUTCTime)
 import Data.Time.LocalTime (getZonedTime)
+import GHC.Conc (getNumProcessors)
 
 import Format
 import Segments.Base
@@ -53,9 +54,24 @@ timeComponents t = (days, hrs, mins, secs, ms) where
     (days, hrs) = divMod q2 24
 
 -- powerline.segments.common.sys.cpu_load_percent
-cpuLoadSegment :: SegmentHandler
-cpuLoadSegment args _ = undefined
+cpuLoadPercentSegment :: SegmentHandler
+cpuLoadPercentSegment args _ = undefined
     -- TODO: ignoring the format arg because supporting it would require us to implement Python-style string formatting
+
+-- powerline.segments.common.sys.system_load
+cpuLoadAverageSegment :: SegmentHandler
+cpuLoadAverageSegment args _ = do
+    let format = pyFormat $ argLookup args "format" "{avg:.1f}"
+    let thresholdGood = argLookup args "threshold_good" 1 :: Float
+    let thresholdBad  = argLookup args "threshold_bad"  2 :: Float
+
+    -- Normalise the load average
+    cpuCount <- fromIntegral <$> getNumProcessors
+    loadAvgs <- cpuLoadAverage
+    let normAvgs = (/cpuCount) <$> loadAvgs
+
+    -- TODO: use thresholds and normalised load to compute gradient value
+    return . return . Segment "system_load" . unwords $ format <$> loadAvgs
 
 -- How long it has been since the system was booted.
 uptime :: IO NominalDiffTime
@@ -77,4 +93,8 @@ bootTime = realToFrac . (read :: String -> Integer)
     where
         isBtime ("btime":_) = True
         isBtime _ = False
+
+-- This is the unnormalized load average; the no. of processes in the run queue averaged over 1, 5, 15 min.
+cpuLoadAverage :: IO [Float]
+cpuLoadAverage = map read . take 3 . words <$> readFile "/proc/loadavg"
 
