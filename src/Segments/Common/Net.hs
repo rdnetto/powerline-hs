@@ -50,7 +50,10 @@ internalIpSegment args _ = do
 
 -- powerline.segments.common.net.external_ip
 externalIpSegment :: SegmentHandler
-externalIpSegment args _ = undefined
+externalIpSegment args _ = do
+    fp <- getPowerlineFile ""
+    return []
+
 
 -- Assigns a score to an interface, based on its alphabetic prefix
 -- Taken from powerline/segments/common.py:74
@@ -78,7 +81,6 @@ getGatewayInterface = head
     . drop 1
     . lines
     <$> readFile "/proc/net/route"
-
 
 -- Combinator for use with functions
 applyIf :: Bool -> (a -> a) -> (a -> a)

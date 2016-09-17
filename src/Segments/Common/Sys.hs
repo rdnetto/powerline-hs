@@ -5,10 +5,8 @@ import Data.Time.Clock (diffUTCTime, NominalDiffTime)
 import Data.Time.Clock.POSIX (getPOSIXTime, POSIXTime, posixSecondsToUTCTime)
 import GHC.Conc (getNumProcessors)
 import Prelude hiding (readFile)
-import System.Directory (doesFileExist, getTemporaryDirectory)
-import System.FilePath ((</>))
+import System.Directory (doesFileExist)
 import System.IO.Strict (readFile)
-import System.Posix.User (getLoginName)
 
 import Format
 import Segments.Base
@@ -107,8 +105,7 @@ cpuUsage = do
     let readStat = map read . take 8 . drop 1 . words . head . lines <$> readFile "/proc/stat"
 
     -- To avoid blocking for hundreds of ms while sampling usage, we store the previous values.
-    valuesFile <- (</>) <$> getTemporaryDirectory
-                        <*> fmap (".powerline-hs_cpu_usage_" ++) getLoginName
+    valuesFile <- getPowerlineFile "cpu_usage"
 
     (vals0, vals1) <- ifM (doesFileExist valuesFile)
                       (do

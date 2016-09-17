@@ -5,6 +5,7 @@ module Segments.Base(
     SegmentHandler,
     argLookup,
     contextHandler,
+    getPowerlineFile,
     modifySegText,
     simpleHandler,
     return2,
@@ -13,6 +14,9 @@ module Segments.Base(
 import Control.Monad (liftM)
 import Data.Maybe (maybeToList)
 import Rainbow (Radiant)
+import System.Directory (createDirectoryIfMissing, getTemporaryDirectory)
+import System.FilePath ((</>))
+import System.Posix.User (getLoginName)
 
 import CommandArgs
 import ConfigSchema (SegmentArgs, argLookup)
@@ -51,4 +55,14 @@ contextHandler hlGroup field _ args = return2 . Segment hlGroup . show $ field a
 
 return2 :: (Monad m1, Monad m2) => a -> m1 (m2 a)
 return2 = return . return
+
+-- Helper method: returns the path to a file with the given name.
+-- Ensures the parent directory exists.
+-- Used by segments which need to maintain state between invocations.
+getPowerlineFile :: String -> IO String
+getPowerlineFile name = do
+    root <- (</> ".powerline-hs") <$> getTemporaryDirectory
+    username <- getLoginName
+    createDirectoryIfMissing False root
+    return $ root </> name ++ "_" ++ username
 
