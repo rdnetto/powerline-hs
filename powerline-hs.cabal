@@ -43,6 +43,7 @@ executable powerline-hs
                        directory,
                        filepath,
                        network,
+                       network-info,
                        optparse-applicative,
                        process,
                        rainbow,
