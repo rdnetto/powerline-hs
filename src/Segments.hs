@@ -4,6 +4,7 @@ import qualified Data.Map.Lazy as Map
 import Data.Maybe (fromMaybe)
 import System.Environment (lookupEnv)
 import System.FilePath (takeFileName)
+import System.Posix.User (getLoginName)
 
 import qualified ConfigSchema as CS
 import Segments.Base
@@ -18,7 +19,7 @@ import qualified Segments.VCS
 -- Map of segments to their handlers
 segmentHandlers :: Map.Map String SegmentHandler
 segmentHandlers = Map.fromList [
-        ("powerline.segments.common.env.user",              simpleHandler "user" $ lookupEnv "USER"),
+        ("powerline.segments.common.env.user",              simpleHandler "user" $ Just <$> getLoginName),
         ("powerline.segments.common.env.virtualenv",        simpleHandler "virtualenv" . fmap (fmap takeFileName) $ lookupEnv "VIRTUAL_ENV"),
         ("powerline.segments.common.net.hostname",          Segments.Common.Net.hostnameSegment),
         ("powerline.segments.common.sys.cpu_load_percent",  Segments.Common.Sys.cpuLoadPercentSegment),
