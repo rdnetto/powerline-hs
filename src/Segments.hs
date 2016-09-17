@@ -32,17 +32,19 @@ segmentHandlers = Map.fromList [
 
 -- Execute a segment
 generateSegment :: PromptContext -> CS.Segment -> IO [Segment]
-generateSegment ctx (CS.Segment sFunc sBefore sAfter sArgs)  = do
-    let handler = Map.findWithDefault missingHandler sFunc segmentHandlers
+generateSegment ctx (CS.Segment sFunc sBefore sAfter sArgs) = do
+    let handler = case Map.lookup sFunc segmentHandlers of
+                       Just x  -> x
+                       Nothing -> missingHandler sFunc
+
     body <- handler (fromMaybe Map.empty sArgs) ctx
 
     let concatMaybes = concatMap $ fromMaybe ""
-
     return $ modifySegText (\body' -> concatMaybes [sBefore, Just body', sAfter]) <$> body
 
 -- Default handler
-missingHandler :: SegmentHandler
-missingHandler _ _ = return . return $ Segment "" $ red "???"
+missingHandler :: String -> SegmentHandler
+missingHandler func _ _ = return . return . Segment "background" $ red func
 
 -- Helper function for error handling
 red :: String -> String

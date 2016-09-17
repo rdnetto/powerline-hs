@@ -8,6 +8,7 @@ import qualified Data.Map.Lazy as Map
 import Data.Maybe (fromJust, catMaybes)
 import Prelude hiding (lookup, div)
 import Rainbow
+import Safe
 
 import qualified ConfigSchema as CS
 import Segments.Base (Segment(..), modifySegText)
@@ -62,7 +63,7 @@ renderSegments rInfo@RenderInfo{..} s segments = res where
                   else Divider divFore   divBack   divText
 
             -- Use explicit styling from previous segment
-            (styleFore, styleBack) = styleTuple rInfo . head . catMaybes $ lookupStyle rInfo <$> [
+            (styleFore, styleBack) = styleTuple rInfo . headNote ("looking up segmentGroup " ++ show (segmentGroup prev)) . catMaybes $ lookupStyle rInfo <$> [
                     segmentGroup prev ++ ":divider",    -- segment[segment["divider_highlight_group"] = "time:divider"]
                     segmentGroup prev                   -- Fallback to the normal styling for that segment
                 ]
