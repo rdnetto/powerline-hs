@@ -2,15 +2,23 @@
 
 module Segments.Common  where
 
+import Control.Concurrent (threadDelay)
 import Data.Time (formatTime, defaultTimeLocale)
 import Data.Time.Clock (diffUTCTime, NominalDiffTime)
 import Data.Time.Clock.POSIX (getPOSIXTime, POSIXTime, posixSecondsToUTCTime)
 import Data.Time.LocalTime (getZonedTime)
 import GHC.Conc (getNumProcessors)
+import Prelude hiding (readFile)
+import System.Directory (doesFileExist, getTemporaryDirectory)
+import System.FilePath ((</>))
+import System.IO.Strict (readFile)
+import System.Posix.User (getLoginName)
 
 import Format
 import Segments.Base
+import Util
 
+import Debug.Trace
 
 -- powerline.segments.common.time.date
 timeDateSegment :: SegmentHandler
@@ -55,8 +63,10 @@ timeComponents t = (days, hrs, mins, secs, ms) where
 
 -- powerline.segments.common.sys.cpu_load_percent
 cpuLoadPercentSegment :: SegmentHandler
-cpuLoadPercentSegment args _ = undefined
-    -- TODO: ignoring the format arg because supporting it would require us to implement Python-style string formatting
+cpuLoadPercentSegment args _ = do
+    let format = pyFormat $ argLookup args "format" "{0:.0f}%"
+    usage <- cpuUsage
+    return . return . Segment "cpu_load_percent" $ format usage
 
 -- powerline.segments.common.sys.system_load
 cpuLoadAverageSegment :: SegmentHandler
@@ -97,4 +107,56 @@ bootTime = realToFrac . (read :: String -> Integer)
 -- This is the unnormalized load average; the no. of processes in the run queue averaged over 1, 5, 15 min.
 cpuLoadAverage :: IO [Float]
 cpuLoadAverage = map read . take 3 . words <$> readFile "/proc/loadavg"
+
+-- Returns the CPU usage as a percentage.
+--
+-- Values in /proc/stat are since boot, so we need to sample twice and take the difference.
+-- We use the same approch as psutil, which is to save the current sample in temporary file and use it for subsequent evaluations.
+-- This means that the sampling period is the time between invocations, which significantly improves the accuracy.
+--
+-- See: https://github.com/Leo-G/DevopsWiki/wiki/How-Linux-CPU-Usage-Time-and-Percentage-is-calculated
+-- See: proc(5) - /proc/stat
+cpuUsage :: IO Float
+cpuUsage = do
+    -- cpu, user, nice, system, idle, iowait, irq, softirq, steal, guest, guest_nice
+    let readStat = map read . take 8 . drop 1 . words . head . lines <$> readFile "/proc/stat"
+
+    -- To avoid blocking for hundreds of ms while sampling usage, we store the previous values.
+    valuesFile <- (</>) <$> getTemporaryDirectory
+                        <*> fmap (".powerline-hs_cpu_usage_" ++) getLoginName
+
+    (vals0, vals1) <- ifM (doesFileExist valuesFile)
+                      (do
+                            -- Historical data available - compute usage over period since we were last run.
+                            vals0 <- map read . words <$> readFile valuesFile
+                            vals1 <- readStat
+
+                            writeFile valuesFile . unwords . map show $ vals1
+                            return (vals0, vals1)
+                      ) (do
+                            -- No historical data - need to block until we have enough data
+                            vals0 <- readStat
+
+                            -- Keep sampling until we have a value with an accuracy of at least ±10%.
+                            vals1 <- untilM $ do
+                                threadDelay 10000       -- /proc/stat uses units of CONFIG_HZ, which is typically 10 ms.
+                                vals' <- readStat
+
+                                return $ if (sum vals' - sum vals0) < 10
+                                         then Nothing
+                                         else Just vals'
+
+                            writeFile valuesFile . unwords . map show $ vals1
+                            return (vals0, vals1)
+                      )
+
+    -- sum [user, nice, system, idle, iowait, irq, softirq, steal]
+    let totalTime = sum vals1 - sum vals0
+
+    -- sum [idle, iowait]
+    let idle   = (!! 3)
+        iowait = (!! 4)
+    let idleTime = idle vals1 + iowait vals1 - (idle vals0 + iowait vals0)
+
+    return $ 100 * (1 - idleTime / totalTime)
 

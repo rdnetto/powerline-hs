@@ -80,3 +80,19 @@ orElse (Just x) _ = Just x
 orElse Nothing (Just x) = Just x
 orElse Nothing Nothing = Nothing
 
+-- Run an effectful computation until it produces a value
+untilM :: IO (Maybe a) -> IO a
+untilM f = do
+    res <- f
+    case res of
+         Just x  -> return x
+         Nothing -> untilM f
+
+-- if, lifted to an arbitrary monad.
+ifM :: Monad m => m Bool -> m a -> m a -> m a
+ifM cond t f = do
+    c <- cond
+    if c
+       then t
+       else f
+

@@ -41,9 +41,11 @@ executable powerline-hs
                        rainbow,
                        safe,
                        scientific,
+                       strict,
                        text,
                        time,
                        unordered-containers,
+                       unix,
                        vector,
                        xdg-basedir
 
