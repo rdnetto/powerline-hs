@@ -7,6 +7,7 @@ module Segments.Base(
     contextHandler,
     modifySegText,
     simpleHandler,
+    return2,
     ) where
 
 import Control.Monad (liftM)
@@ -46,5 +47,8 @@ simpleHandler hlGroup f _ _ = maybeToList <$> Segment hlGroup `lift2` f where
 
 -- Wrapper for handlers which show a value provided in the command args
 contextHandler :: Show a => String -> (CommandArgs -> a) -> SegmentHandler
-contextHandler hlGroup field _ args = return . return . Segment hlGroup . show $ field args
+contextHandler hlGroup field _ args = return2 . Segment hlGroup . show $ field args
+
+return2 :: (Monad m1, Monad m2) => a -> m1 (m2 a)
+return2 = return . return
 

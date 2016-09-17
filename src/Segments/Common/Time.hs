@@ -17,5 +17,5 @@ timeDateSegment args _ = do
                   else "date"
 
     t <- getZonedTime
-    return . return $ Segment hlGroup $ formatTime defaultTimeLocale fmt t
+    return2 $ Segment hlGroup $ formatTime defaultTimeLocale fmt t
 

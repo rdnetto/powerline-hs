@@ -50,7 +50,7 @@ cpuLoadPercentSegment :: SegmentHandler
 cpuLoadPercentSegment args _ = do
     let format = pyFormat $ argLookup args "format" "{0:.0f}%"
     usage <- cpuUsage
-    return . return . Segment "cpu_load_percent" $ format usage
+    return2 . Segment "cpu_load_percent" $ format usage
 
 -- powerline.segments.common.sys.system_load
 cpuLoadAverageSegment :: SegmentHandler
@@ -65,7 +65,7 @@ cpuLoadAverageSegment args _ = do
     let normAvgs = (/cpuCount) <$> loadAvgs
 
     -- TODO: use thresholds and normalised load to compute gradient value
-    return . return . Segment "system_load" . unwords $ format <$> loadAvgs
+    return2 . Segment "system_load" . unwords $ format <$> loadAvgs
 
 
 -- How long it has been since the system was booted.
