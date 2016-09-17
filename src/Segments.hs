@@ -2,7 +2,6 @@ module Segments(generateSegment) where
 
 import qualified Data.Map.Lazy as Map
 import Data.Maybe (fromMaybe)
-import qualified Network.BSD as Net
 import System.Environment (lookupEnv)
 import System.FilePath (takeFileName)
 
@@ -21,7 +20,7 @@ segmentHandlers :: Map.Map String SegmentHandler
 segmentHandlers = Map.fromList [
         ("powerline.segments.common.env.user",              simpleHandler "user" $ lookupEnv "USER"),
         ("powerline.segments.common.env.virtualenv",        simpleHandler "virtualenv" . fmap (fmap takeFileName) $ lookupEnv "VIRTUAL_ENV"),
-        ("powerline.segments.common.net.hostname",          simpleHandler "hostname" $ Just <$> Net.getHostName),
+        ("powerline.segments.common.net.hostname",          Segments.Common.Net.hostnameSegment),
         ("powerline.segments.common.sys.cpu_load_percent",  Segments.Common.Sys.cpuLoadPercentSegment),
         ("powerline.segments.common.sys.system_load",       Segments.Common.Sys.cpuLoadAverageSegment),
         ("powerline.segments.common.sys.uptime",            Segments.Common.Sys.uptimeSegment),
