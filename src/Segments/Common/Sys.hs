@@ -1,12 +1,8 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-
-module Segments.Common  where
+module Segments.Common.Sys where
 
 import Control.Concurrent (threadDelay)
-import Data.Time (formatTime, defaultTimeLocale)
 import Data.Time.Clock (diffUTCTime, NominalDiffTime)
 import Data.Time.Clock.POSIX (getPOSIXTime, POSIXTime, posixSecondsToUTCTime)
-import Data.Time.LocalTime (getZonedTime)
 import GHC.Conc (getNumProcessors)
 import Prelude hiding (readFile)
 import System.Directory (doesFileExist, getTemporaryDirectory)
@@ -18,19 +14,6 @@ import Format
 import Segments.Base
 import Util
 
-import Debug.Trace
-
--- powerline.segments.common.time.date
-timeDateSegment :: SegmentHandler
-timeDateSegment args _ = do
-    let isTime = argLookup args "istime" False
-    let fmt = argLookup args "format" "%Y-%m-%d"
-    let hlGroup = if   isTime
-                  then "time"
-                  else "date"
-
-    t <- getZonedTime
-    return . return $ Segment hlGroup $ formatTime defaultTimeLocale fmt t
 
 -- powerline.segments.common.sys.uptime
 uptimeSegment :: SegmentHandler
@@ -61,6 +44,7 @@ timeComponents t = (days, hrs, mins, secs, ms) where
     (q2, mins)  = divMod q1 60
     (days, hrs) = divMod q2 24
 
+
 -- powerline.segments.common.sys.cpu_load_percent
 cpuLoadPercentSegment :: SegmentHandler
 cpuLoadPercentSegment args _ = do
@@ -82,6 +66,7 @@ cpuLoadAverageSegment args _ = do
 
     -- TODO: use thresholds and normalised load to compute gradient value
     return . return . Segment "system_load" . unwords $ format <$> loadAvgs
+
 
 -- How long it has been since the system was booted.
 uptime :: IO NominalDiffTime
@@ -159,4 +144,5 @@ cpuUsage = do
     let idleTime = idle vals1 + iowait vals1 - (idle vals0 + iowait vals0)
 
     return $ 100 * (1 - idleTime / totalTime)
+
 

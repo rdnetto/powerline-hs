@@ -1,5 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-
 module Segments.Shell where
 
 import Data.Aeson (Value(..))
@@ -14,11 +12,13 @@ import Segments.Base
 import Util
 
 
+-- powerline.segments.shell.last_pipe_status
 pipeStatusSegment :: SegmentHandler
 pipeStatusSegment _ args = return $ f <$> lastPipeStatus args where
     f 0 = Segment "exit_success" "0"
     f x = Segment "exit_fail" (show x)
 
+-- powerline.segments.shell.cwd
 cwdSegment :: SegmentHandler
 cwdSegment args ctx = do
     let argPath = Map.lookup "shortened_path" $ rendererArgs ctx

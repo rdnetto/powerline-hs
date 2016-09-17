@@ -1,6 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-
 module Rendering(putChunks, renderSegments, RenderInfo(RenderInfo)) where
 
 import qualified Data.ByteString as BS

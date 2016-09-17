@@ -13,6 +13,12 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 executable powerline-hs
+  default-language:    Haskell2010
+  ghc-options:         -O2 -Wall
+
+  default-extensions:  ScopedTypeVariables,
+                       RecordWildCards
+
   hs-source-dirs:      src
   main-is:             Main.hs
   other-modules:       Aeson_Merge,
@@ -23,12 +29,13 @@ executable powerline-hs
                        Rendering,
                        Segments,
                        Segments.Base,
-                       Segments.Common,
+                       Segments.Common.Net,
+                       Segments.Common.Sys,
+                       Segments.Common.Time,
                        Segments.Shell,
                        Segments.VCS,
                        Util
-  default-language:    Haskell2010
-  ghc-options:         -O2 -Wall
+
   build-depends:       base >= 4.7 && < 5,
                        aeson,
                        bytestring,

@@ -1,6 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE RecordWildCards #-}
-
 -- This module is a compatibility layer that emulates the behaviour of Python's format strings.
 -- It is needed because several Powerline segments take a format argument that uses this notation.
 -- Interpolation sections have the grammar {[name][:fmt]}, and may also contain arbitrary text.

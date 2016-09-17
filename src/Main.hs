@@ -1,5 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-
 -- TODO: split this file up - too much config logic in here
 module Main where
 
