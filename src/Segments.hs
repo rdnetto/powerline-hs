@@ -4,11 +4,11 @@ import qualified Data.Map.Lazy as Map
 import Data.Maybe (fromMaybe)
 import System.Environment (lookupEnv)
 import System.FilePath (takeFileName)
-import System.Posix.User (getLoginName)
 
 import qualified ConfigSchema as CS
 import Segments.Base
 
+import qualified Segments.Common.Env
 import qualified Segments.Common.Net
 import qualified Segments.Common.Sys
 import qualified Segments.Common.Time
@@ -19,11 +19,12 @@ import qualified Segments.VCS
 -- Map of segments to their handlers
 segmentHandlers :: Map.Map String SegmentHandler
 segmentHandlers = Map.fromList [
-        ("powerline.segments.common.env.user",              simpleHandler "user" $ Just <$> getLoginName),
+        ("powerline.segments.common.env.environment",       Segments.Common.Env.envSegment),
+        ("powerline.segments.common.env.user",              Segments.Common.Env.userSegment),
         ("powerline.segments.common.env.virtualenv",        simpleHandler "virtualenv" . fmap (fmap takeFileName) $ lookupEnv "VIRTUAL_ENV"),
+        ("powerline.segments.common.net.external_ip",       Segments.Common.Net.externalIpSegment),
         ("powerline.segments.common.net.hostname",          Segments.Common.Net.hostnameSegment),
         ("powerline.segments.common.net.internal_ip",       Segments.Common.Net.internalIpSegment),
-        ("powerline.segments.common.net.external_ip",       Segments.Common.Net.externalIpSegment),
         ("powerline.segments.common.sys.cpu_load_percent",  Segments.Common.Sys.cpuLoadPercentSegment),
         ("powerline.segments.common.sys.system_load",       Segments.Common.Sys.cpuLoadAverageSegment),
         ("powerline.segments.common.sys.uptime",            Segments.Common.Sys.uptimeSegment),
