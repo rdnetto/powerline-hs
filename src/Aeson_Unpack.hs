@@ -25,6 +25,10 @@ instance ValueType Float where
     unpackValue (Number x) = toRealFloat x
     unpackValue x = error $ show x ++ " is not a number"
 
+instance ValueType Rational where
+    unpackValue (Number x) = toRational x
+    unpackValue x = error $ show x ++ " is not a number"
+
 instance {-# OVERLAPPING #-} ValueType String where
     unpackValue (String x) = unpack x
     unpackValue x = error $ show x ++ " is not a String"

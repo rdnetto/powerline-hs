@@ -41,6 +41,7 @@ executable powerline-hs
                        bytestring,
                        containers,
                        directory,
+                       download,
                        filepath,
                        network,
                        network-info,

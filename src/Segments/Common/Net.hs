@@ -1,13 +1,21 @@
 module Segments.Common.Net (hostnameSegment, internalIpSegment, externalIpSegment, getGatewayInterface) where
 
+import qualified Data.ByteString.Char8 as ASCII
+import Data.Char (isSpace)
 import Data.List (sortOn)
 import qualified Data.Map.Lazy as Map
-import Data.Maybe (isJust)
+import Data.Maybe (isJust, maybeToList)
+import Data.Time.Clock (getCurrentTime, diffUTCTime)
 import Network.BSD (getHostName)
+import Network.Download (openURI)
 import qualified Network.Info as NetInfo
+import Prelude hiding (readFile)
+import System.Directory (doesFileExist, getModificationTime)
 import System.Environment (lookupEnv)
+import System.IO.Strict (readFile)
 
 import Segments.Base
+import Util
 
 
 -- powerline.segments.common.net.hostname
@@ -46,13 +54,38 @@ internalIpSegment args _ = do
             . sortOn ((*) (-1) . flip (Map.findWithDefault 0) interfacePrefixScores . NetInfo.name)
             . filter (intfPred . NetInfo.name)
             <$> NetInfo.getNetworkInterfaces
-    return2 $ Segment "background:divider" $ ipvX intf
+    return2 $ Segment "background" $ ipvX intf
 
 -- powerline.segments.common.net.external_ip
 externalIpSegment :: SegmentHandler
 externalIpSegment args _ = do
-    fp <- getPowerlineFile ""
-    return []
+    let interval = argLookup args "interval" 300
+    let queryUrl = argLookup args "query_url" "http://ipv4.icanhazip.com"
+
+    fp <- getPowerlineFile "external_ip"
+
+    mtime <- ifM (doesFileExist fp)
+                 (Just <$> getModificationTime fp)
+                 (return Nothing)
+
+    now <- getCurrentTime
+    let doUpdate = maybe True (\m -> diffUTCTime now m > fromRational interval) mtime
+
+    extIP <- if doUpdate
+                then do
+                    -- TODO: update the file asynchronously, instead of blocking
+                    let rstrip = takeWhile $ not . isSpace
+                    res <- fmap (rstrip . ASCII.unpack) <$> openURI queryUrl
+
+                    case res of
+                         Left  _  -> return Nothing
+                         Right ip -> do
+                             writeFile fp ip
+                             return $ Just ip
+
+                else Just <$> readFile fp
+
+    return $ Segment "background" <$> maybeToList extIP
 
 
 -- Assigns a score to an interface, based on its alphabetic prefix

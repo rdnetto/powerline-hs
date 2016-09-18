@@ -23,6 +23,7 @@ segmentHandlers = Map.fromList [
         ("powerline.segments.common.env.virtualenv",        simpleHandler "virtualenv" . fmap (fmap takeFileName) $ lookupEnv "VIRTUAL_ENV"),
         ("powerline.segments.common.net.hostname",          Segments.Common.Net.hostnameSegment),
         ("powerline.segments.common.net.internal_ip",       Segments.Common.Net.internalIpSegment),
+        ("powerline.segments.common.net.external_ip",       Segments.Common.Net.externalIpSegment),
         ("powerline.segments.common.sys.cpu_load_percent",  Segments.Common.Sys.cpuLoadPercentSegment),
         ("powerline.segments.common.sys.system_load",       Segments.Common.Sys.cpuLoadAverageSegment),
         ("powerline.segments.common.sys.uptime",            Segments.Common.Sys.uptimeSegment),
