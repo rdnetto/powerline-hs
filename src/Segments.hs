@@ -32,7 +32,7 @@ segmentHandlers = Map.fromList [
         ("powerline.segments.common.vcs.branch",            Segments.VCS.branchSegment),
         ("powerline.segments.common.vcs.stash",             Segments.VCS.stashCountSegment),
         ("powerline.segments.shell.cwd",                    Segments.Shell.cwdSegment),
-        ("powerline.segments.shell.jobnum",                 simpleHandler "jobnum" $ lookupEnv "_POWERLINE_JOBNUM"),
+        ("powerline.segments.shell.jobnum",                 Segments.Shell.jobNumSegment),
         ("powerline.segments.shell.last_pipe_status",       Segments.Shell.pipeStatusSegment)
     ]
 

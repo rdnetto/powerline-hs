@@ -29,6 +29,7 @@ executable powerline-hs
                        Rendering,
                        Segments,
                        Segments.Base,
+                       Segments.Common.Env,
                        Segments.Common.Net,
                        Segments.Common.Sys,
                        Segments.Common.Time,

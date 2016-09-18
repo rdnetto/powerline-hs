@@ -48,6 +48,16 @@ cwdSegment args ctx = do
             else pathComponents'
         )
 
+-- powerline.segments.shell.jobnum
+jobNumSegment :: SegmentHandler
+jobNumSegment args ctx = do
+    let showZero = argLookup args "show_zero" False
+    let val = jobNum ctx
+
+    if val == 0 && not showZero
+       then return []
+       else return2 . Segment "jobnum" $ show val
+
 
 -- Truncate parent components to this length
 maxParentLen :: SegmentArgs -> Maybe Int
