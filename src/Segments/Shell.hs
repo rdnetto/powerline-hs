@@ -12,11 +12,18 @@ import Segments.Base
 import Util
 
 
+-- powerline.segments.shell.last_status
+lastStatusSegment :: SegmentHandler
+lastStatusSegment _ args = return2 . statusSegment . last $ lastPipeStatus args
+
 -- powerline.segments.shell.last_pipe_status
 pipeStatusSegment :: SegmentHandler
-pipeStatusSegment _ args = return $ f <$> lastPipeStatus args where
-    f 0 = Segment "exit_success" "0"
-    f x = Segment "exit_fail" (show x)
+pipeStatusSegment _ args = return $ statusSegment <$> lastPipeStatus args
+
+-- Common logic for exit code segments
+statusSegment :: Int -> Segment
+statusSegment 0 = Segment "exit_success" "0"
+statusSegment x = Segment "exit_fail" (show x)
 
 -- powerline.segments.shell.cwd
 cwdSegment :: SegmentHandler
