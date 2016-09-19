@@ -2,7 +2,7 @@ module Segments.Shell where
 
 import Data.Aeson (Value(..))
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromMaybe, maybeToList)
+import Data.Maybe (catMaybes, fromMaybe, maybeToList)
 import System.Directory (getCurrentDirectory)
 import System.FilePath (joinPath, splitPath, dropTrailingPathSeparator)
 
@@ -65,6 +65,29 @@ jobNumSegment args ctx = do
        then return []
        else return2 . Segment "jobnum" $ show val
 
+-- powerline.segments.shell.mode
+modeSegment :: SegmentHandler
+modeSegment args ctx = do
+    let defaultModes = catMaybes [
+                Map.lookup "default_mode" (rendererArgs ctx),
+                argLookup' args "default"
+            ]
+    let overrideDict = argLookup args "override" $ Map.fromList [
+                ("vicmd", "COMMND"),
+                ("viins", "INSERT")
+            ]
+
+    let mode = Map.lookup "mode" (rendererArgs ctx)
+
+    let ignoreMode m | m `elem` defaultModes = Nothing
+                     | otherwise             = Just m
+
+    let overrideMode m = fromMaybe m $ Map.lookup m overrideDict
+
+    -- TODO: there's dedicated colourscheme support for modes
+    return . maybeToList $ do
+        m <- ignoreMode =<< mode
+        return . Segment "mode" $ overrideMode m
 
 -- Truncate parent components to this length
 maxParentLen :: SegmentArgs -> Maybe Int

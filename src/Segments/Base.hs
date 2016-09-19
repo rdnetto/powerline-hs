@@ -4,6 +4,7 @@ module Segments.Base(
     SegmentArgs,
     SegmentHandler,
     argLookup,
+    argLookup',
     contextHandler,
     getPowerlineFile,
     modifySegText,
@@ -19,7 +20,7 @@ import System.FilePath ((</>))
 import System.Posix.User (getLoginName)
 
 import CommandArgs
-import ConfigSchema (SegmentArgs, argLookup)
+import ConfigSchema (SegmentArgs, argLookup, argLookup')
 
 
 -- TODO: figure out how segments can log failure

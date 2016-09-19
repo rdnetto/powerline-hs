@@ -38,7 +38,7 @@ segmentHandlers = Map.fromList [
         ("powerline.segments.shell.jobnum",                 Segments.Shell.jobNumSegment),
         ("powerline.segments.shell.last_pipe_status",       Segments.Shell.pipeStatusSegment),
         ("powerline.segments.shell.last_status",            Segments.Shell.lastStatusSegment),
-        ("powerline.segments.shell.mode",                   undefined)
+        ("powerline.segments.shell.mode",                   Segments.Shell.modeSegment)
     ]
 
 -- Execute a segment

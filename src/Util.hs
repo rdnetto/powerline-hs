@@ -30,6 +30,9 @@ intersperseBy _ [] = []
 mapBoth :: (a -> b) -> (a, a) -> (b, b)
 mapBoth f (x, y) = (f x, f y)
 
+bimap :: (a -> c) -> (b -> d) -> (a, b) -> (c, d)
+bimap f g (x, y) = (f x, g y)
+
 mapFst :: (a -> b) -> (a, c) -> (b, c)
 mapFst f (x, y) = (f x, y)
 

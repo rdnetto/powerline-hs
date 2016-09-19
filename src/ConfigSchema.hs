@@ -146,3 +146,7 @@ argLookup sa k def = res where
             Just x  -> unpackValue x
             Nothing -> def
 
+-- Like argLookup, but exposes failure.
+argLookup' :: ValueType a => SegmentArgs -> String -> Maybe a
+argLookup' sa k = unpackValue <$> MapL.lookup k sa
+

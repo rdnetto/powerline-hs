@@ -4,10 +4,14 @@
 module Aeson_Unpack where
 
 import Data.Aeson (Value(..))
+import qualified Data.HashMap.Strict as HMS
+import qualified Data.Map.Strict as MapS
 import Data.Maybe (fromJust)
 import Data.Scientific (isInteger, toBoundedInteger, toRealFloat)
 import Data.Text (unpack)
-import Data.Vector (toList)
+import qualified Data.Vector as Vector
+
+import Util
 
 
 class ValueType a where
@@ -34,6 +38,10 @@ instance {-# OVERLAPPING #-} ValueType String where
     unpackValue x = error $ show x ++ " is not a String"
 
 instance ValueType a => ValueType [a] where
-    unpackValue (Array xs) = unpackValue <$> toList xs
+    unpackValue (Array xs) = unpackValue <$> Vector.toList xs
     unpackValue x = error $ show x ++ " is not an Array"
+
+instance ValueType v => ValueType (MapS.Map String v) where
+    unpackValue (Object hmap) = MapS.fromList $ bimap unpack unpackValue <$> HMS.toList hmap
+    unpackValue x = error $ show x ++ " is not an Object"
 
