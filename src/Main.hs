@@ -47,7 +47,16 @@ main = parseArgs >>= \args -> do
                     "colorschemes",
                     "colorschemes/shell"
                 ]
-    cs <- loadLayeredConfigFiles csNames :: IO ColourSchemeConfig
+    rootCS <- loadLayeredConfigFiles csNames :: IO ColourSchemeConfig
+
+    let modeCS = fromMaybe Map.empty $ do
+            -- ZSH allows users to define arbitrary modes, so we can't rely on a translation existing for one
+            mode <- Map.lookup "mode" (rendererArgs args)
+            cs   <- Map.lookup  mode  (modeTranslations rootCS)
+            return $ groups cs
+
+    let rightBiasedMerge = merge preserveMissing preserveMissing $ zipWithMatched (\_ _ r -> r)
+    let cs = rightBiasedMerge (groups rootCS) modeCS
 
     -- Themes - more complicated because we need to merge before parsing
     let default_top_theme = defaultTopTheme $ common config
@@ -63,7 +72,7 @@ main = parseArgs >>= \args -> do
     -- Needed for rendering
     let numSpaces = fromMaybe 1 $ spaces themeCfg
     let divCfg = themeCfg & dividers & fromJust
-    let renderInfo = RenderInfo (colors colours) (groups cs) divCfg numSpaces
+    let renderInfo = RenderInfo (colors colours) cs divCfg numSpaces
     term <- byteStringMakerFromEnvironment
 
     case debugSegment args of

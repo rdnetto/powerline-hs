@@ -81,9 +81,14 @@ instance FromJSON Colour where
 type ColourScheme = Map String TerminalColour
 
 data ColourSchemeConfig = ColourSchemeConfig {
-    groups :: ColourScheme
+    groups :: ColourScheme,
+    modeTranslations :: Map String ColourSchemeConfig
 } deriving (Generic, Show)
-instance FromJSON ColourSchemeConfig
+
+instance FromJSON ColourSchemeConfig where
+    parseJSON (Object obj) = ColourSchemeConfig <$> obj .:  "groups"
+                                                <*> obj .:? "mode_translations" .!= MapL.empty
+    parseJSON invalid      = typeMismatch "ColourSchemeConfig" invalid
 
 data TerminalColour = TerminalColour {
     fg :: String,

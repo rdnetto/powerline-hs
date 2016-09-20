@@ -84,7 +84,6 @@ modeSegment args ctx = do
 
     let overrideMode m = fromMaybe m $ Map.lookup m overrideDict
 
-    -- TODO: there's dedicated colourscheme support for modes
     return . maybeToList $ do
         m <- ignoreMode =<< mode
         return . Segment "mode" $ overrideMode m
