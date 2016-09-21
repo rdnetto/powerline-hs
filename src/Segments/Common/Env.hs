@@ -1,4 +1,3 @@
-
 module Segments.Common.Env where
 
 import Data.Maybe (maybeToList)

@@ -8,6 +8,7 @@ import System.FilePath (takeFileName)
 import qualified ConfigSchema as CS
 import Segments.Base
 
+import qualified Segments.Common.Batt
 import qualified Segments.Common.Env
 import qualified Segments.Common.Net
 import qualified Segments.Common.Sys
@@ -19,7 +20,7 @@ import qualified Segments.VCS
 -- Map of segments to their handlers
 segmentHandlers :: Map.Map String SegmentHandler
 segmentHandlers = Map.fromList [
-        ("powerline.segments.common.bat.battery",           undefined),
+        ("powerline.segments.common.bat.battery",           Segments.Common.Batt.battSegment),
         ("powerline.segments.common.env.environment",       Segments.Common.Env.envSegment),
         ("powerline.segments.common.env.user",              Segments.Common.Env.userSegment),
         ("powerline.segments.common.env.virtualenv",        simpleHandler "virtualenv" . fmap (fmap takeFileName) $ lookupEnv "VIRTUAL_ENV"),
