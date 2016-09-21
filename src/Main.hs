@@ -36,6 +36,8 @@ import Util
 
 main :: IO ()
 main = parseArgs >>= \args -> do
+    -- TODO: Need to include a base layer of /usr/lib/python3.4/site-packages/powerline/config_files/* as well
+    --       This is why Powerline doesn't require ~/.config/powerline to exist, and why the charging icon is wrong for me
     cfgDir  <- getUserConfigDir "powerline"
     config  <- loadConfigFile $ cfgDir </> "config.json" :: IO MainConfig
     colours <- loadConfigFile $ cfgDir </> "colors.json" :: IO ColourConfig
