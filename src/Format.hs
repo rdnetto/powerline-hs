@@ -4,11 +4,10 @@
 --
 -- See: https://docs.python.org/3.3/library/string.html#format-specification-mini-language
 
-module Format (pyFormat) where
+module Format (pyFormat, parseFmt, convertFmt) where
 
 import Data.Char (isDigit)
 import Data.Maybe (fromMaybe)
-import Safe (lastMay)
 import Text.ParserCombinators.ReadP
 import Text.Printf (printf, PrintfType)
 
@@ -49,9 +48,9 @@ pyFormat = printf . concatMap convertFmt . parseFmt
 
 parseFmt :: PyFormatStr -> [FormatSegment]
 parseFmt fmt = res where
-    res = case lastMay $ readP_to_S parser fmt of
-            Just (x, "") -> x
-            _            -> fail $ '\'' : fmt ++ "' does not have a recognized format."
+    res = case runParser parser fmt of
+            Just x -> x
+            _      -> fail $ '\'' : fmt ++ "' does not have a recognized format."
 
     textParser = TextStr <$> munch1 (/= '{')
     parser :: ReadP [FormatSegment] = many1 $ fmtParser <++ textParser
@@ -110,6 +109,14 @@ parseFmt fmt = res where
                               <*  ignoredFlags2
                               <*> precisionParser
                               <*> typeParser
+
+-- Helper function that actually runs the parser
+runParser :: Show a => ReadP a -> String -> Maybe a
+runParser parser s = res where
+    res = case map fst . filter (null . snd) $ readP_to_S parser s of
+               []  -> Nothing
+               [x] -> Just x
+               xs  -> error $ "Ambiguity found in grammar: " ++ show xs
 
 -- Parsers a key in the map into the corresponding value, or fails.
 mapParser :: [(Char, b)] -> ReadP b
