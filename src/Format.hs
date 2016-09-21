@@ -57,7 +57,7 @@ parseFmt fmt = res where
 
     -- "{" [field_name] ["!" conversion] [":" format_spec] "}"
     fmtParser = between (char '{') (char '}') $ nameParser *> convParser *> fmtSpec
-    nameParser = skipMany . satisfy $ not . flip elem ":!"
+    nameParser = skipMany . satisfy $ not . flip elem ":!}"
     convParser = optional $ char '!' *> (char 'r' +++ char 's' +++ char 'a')
     fmtSpec = option defFmtSpec $ char ':' *> fmtSpecParser
     defFmtSpec = FormatStr Nothing Nothing Nothing Nothing Nothing
