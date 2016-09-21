@@ -99,3 +99,12 @@ ifM cond t f = do
        then t
        else f
 
+-- Returns the first result which succeeds, if any.
+takeFirstJust :: Monad m => [m (Maybe a)] -> m (Maybe a)
+takeFirstJust (m0:ms) = do
+    m <- m0
+    case m of
+        Just _  -> return m
+        Nothing -> takeFirstJust ms
+takeFirstJust [] = return Nothing
+

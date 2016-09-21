@@ -17,6 +17,7 @@ import System.FilePath ((</>))
 
 import Format
 import Segments.Base
+import Util
 
 
 data BattStatus = BattStatus {
@@ -36,11 +37,24 @@ battSegment args _ = do
     let onlineSym  = argLookup args "online" "C"
     let offlineSym = argLookup args "offline" ""
 
-    return []
+    -- TODO: gradient support
+    let renderSerious BattStatus{..} = Segment "battery" txt where
+            txt = format acState (100 * charge)
+            acState = if charging
+                         then onlineSym
+                         else offlineSym
+
+    let renderGamelike = undefined
+
+    battStat <- takeFirstJust [sysfsBatt]
+    return $ case (gamify, battStat) of
+                  (True,  Just bs) -> renderGamelike bs
+                  (False, Just bs) -> [renderSerious bs]
+                  (_, Nothing) -> []
 
 
 -- Retrieve battery status using sysfs (Linux)
-sysfsBatt :: IO BattStatus
+sysfsBatt :: IO (Maybe BattStatus)
 sysfsBatt = do
     let baseDir = "/sys/class/power_supply"
     let hasEnergy f = doesFileExist $ baseDir </> f </> "energy_now"
@@ -51,5 +65,7 @@ sysfsBatt = do
     energyFull <- readF "energy_full" read
     charging   <- readF "status" (not . isPrefixOf "Discharging")
 
-    return $ BattStatus (sum energyNow / sum energyFull) (or charging)
+    case energyNow of
+         [] -> return Nothing
+         _  -> return . Just $ BattStatus (sum energyNow / sum energyFull) (or charging)
 

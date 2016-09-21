@@ -90,7 +90,7 @@ parseFmt fmt = res where
             -- These are extensions that are present in Python but not printf
             -- 'b',        -- binary
             -- 'n',        -- like %i, but with 1000s separators
-            -- '%'         -- percentage
+            '%',        -- percentage (ignored)
 
             'c',        -- character
             'd',        -- decimal
@@ -143,8 +143,13 @@ convertFmt FormatStr{..} = res where
             convSign <$> numericSign,
             show <$> formatWidth,
             ('.':) . show <$> formatPrecision,
-            return <$> formatChar `orElse` Just 'v'
+            Just formatChar'
         ]
+
+    formatChar' = case formatChar of
+                       Just '%' -> "v%%"                -- Don't process percentage signs, as printf doesn't support them
+                       Just  c  -> [c]
+                       Nothing  -> "v"                  -- %v accepts any type
 
 convAlign :: FillAlign -> String
 convAlign (FillAlign ' ' LeftAlign)  = "-"
