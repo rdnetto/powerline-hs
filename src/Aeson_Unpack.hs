@@ -15,7 +15,7 @@ import Util
 
 
 class ValueType a where
-    unpackValue :: ValueType a => Value -> a
+    unpackValue :: Value -> a
 
 instance ValueType Bool where
     unpackValue (Bool x) = x
