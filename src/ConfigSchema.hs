@@ -10,10 +10,11 @@ import Data.Map (Map)
 import qualified Data.Map.Lazy as MapL
 import Data.Maybe (fromJust, fromMaybe)
 import Data.Scientific
-import Data.Text (Text)
-import Data.Vector as V
+import Data.Text (Text, unpack)
+import Data.Vector as V hiding ((++))
 import Data.Word (Word8)
 import GHC.Generics (Generic)
+import Safe (fromJustNote)
 
 import Aeson_Unpack
 
@@ -86,9 +87,19 @@ data ColourSchemeConfig = ColourSchemeConfig {
 } deriving (Generic, Show)
 
 instance FromJSON ColourSchemeConfig where
-    parseJSON (Object obj) = ColourSchemeConfig <$> obj .:  "groups"
+    parseJSON (Object obj) = ColourSchemeConfig <$> (derefColourScheme <$> obj .:  "groups")
                                                 <*> obj .:? "mode_translations" .!= MapL.empty
     parseJSON invalid      = typeMismatch "ColourSchemeConfig" invalid
+
+-- The JSON representation can contain either a TerminalColour or the key of another colour scheme
+-- This is used implicitly in ColourSchemeConfig' FromJSON instance
+data TerminalColourEntry = TerminalColourLiteral TerminalColour
+                         | TerminalColourRef String
+                         deriving (Generic, Show, Eq)
+instance FromJSON TerminalColourEntry where
+    parseJSON v@(Object _) = TerminalColourLiteral <$> parseJSON v
+    parseJSON (String s)   = return . TerminalColourRef $ unpack s
+    parseJSON invalid      = typeMismatch "TerminalColourEntry" invalid
 
 data TerminalColour = TerminalColour {
     fg :: String,
@@ -96,6 +107,12 @@ data TerminalColour = TerminalColour {
     attrs :: [String]
 } deriving (Generic, Show, Eq)
 instance FromJSON TerminalColour
+
+-- TODO: this can result in an infinite loop
+derefColourScheme :: Map String TerminalColourEntry -> Map String TerminalColour
+derefColourScheme origMap = derefCS <$> origMap where  -- maps over values
+    derefCS (TerminalColourLiteral cs) = cs
+    derefCS (TerminalColourRef k) = derefCS . fromJustNote ("Failed to find colourscheme " ++ k) $ MapL.lookup k origMap
 
 -- themes/*.json
 
