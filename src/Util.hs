@@ -50,6 +50,10 @@ mapLast _ [] = []
 mapLast f xs = xs' ++ [f xn] where
     (xs', xn) = splitEnd xs
 
+mapLeft :: (a -> b) -> Either a c -> Either b c
+mapLeft f (Left x) = Left (f x)
+mapLeft _ (Right x) = Right x
+
 -- Deconstructs a list into an (init, last) tuple in a single O(n) pass.
 splitEnd :: [a] -> ([a], a)
 splitEnd [x] = ([], x)

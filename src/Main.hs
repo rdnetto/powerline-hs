@@ -5,7 +5,7 @@ import Control.Monad
 import Data.Aeson
 import qualified Data.ByteString.Lazy as BSL
 import Data.Function ((&))
-import Data.List (foldl1')
+import Data.List (foldl1', intercalate)
 import qualified Data.Map.Lazy as Map
 import Data.Map.Lazy.Merge
 import Data.Maybe (fromJust, fromMaybe, maybeToList)
@@ -118,7 +118,7 @@ getSysConfigDir = headMay <$> pySiteDirs "powerline"
 loadConfigFile :: FromJSON a => FilePath -> IO a
 loadConfigFile path = do
     raw <- BSL.readFile path
-    return $ fromRight $ eitherDecode raw
+    return $ fromRight . mapLeft (++ "when parsing\n" ++ path) $ eitherDecode raw
 
 -- Loads multiple config files, merges them, then parses them. Merge is right-biased; last file in the list has precedence.
 loadLayeredConfigFiles :: FromJSON a => [FilePath] -> IO a
@@ -127,7 +127,7 @@ loadLayeredConfigFiles paths = do
     let res = foldl1' mergeJson objs
 
     -- Convert to target type
-    return . fromRight . eitherDecode $ encode res
+    return . fromRight . mapLeft (++ " when parsing\n" ++ intercalate "\n" paths) . eitherDecode $ encode res
 
 -- Layer a segment over the corresponding segment data
 layerSegments :: Map.Map String SegmentData -> Segment -> Segment
