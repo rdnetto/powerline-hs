@@ -8,8 +8,9 @@ import Data.Function ((&))
 import Data.List (foldl1')
 import qualified Data.Map.Lazy as Map
 import Data.Map.Lazy.Merge
-import Data.Maybe (fromJust, fromMaybe)
+import Data.Maybe (fromJust, fromMaybe, maybeToList)
 import Rainbow (byteStringMakerFromEnvironment)
+import Safe (headMay)
 import System.Directory (doesFileExist)
 import System.Environment.XDG.BaseDir (getUserConfigDir)
 import System.FilePath ((</>), takeExtension)
@@ -29,6 +30,7 @@ import ConfigSchema(
     ThemeConfig(..),
     defaultTopTheme,
     )
+import PythonSite
 import Rendering
 import Segments
 import Util
@@ -36,19 +38,22 @@ import Util
 
 main :: IO ()
 main = parseArgs >>= \args -> do
-    -- TODO: Need to include a base layer of /usr/lib/python3.4/site-packages/powerline/config_files/* as well
-    --       This is why Powerline doesn't require ~/.config/powerline to exist, and why the charging icon is wrong for me
-    cfgDir  <- getUserConfigDir "powerline"
-    config  <- loadConfigFile $ cfgDir </> "config.json" :: IO MainConfig
-    colours <- loadConfigFile $ cfgDir </> "colors.json" :: IO ColourConfig
+    cfgDir     <- getUserConfigDir "powerline"
+    rootCfgDir <- map2 (</> "config_files") getSysConfigDir
+    let cfgDirs = maybeToList rootCfgDir ++ [cfgDir]
+
+    let loadConfigFile' f = loadLayeredConfigFiles $ (</> f) <$> cfgDirs
+    config  <- loadConfigFile' "config.json" :: IO MainConfig
+    colours <- loadConfigFile' "colors.json" :: IO ColourConfig
 
     let ExtConfig shellCS shellTheme = shell . ext $ config
 
     -- Color scheme
-    let csNames = (\dir -> cfgDir </> dir </> shellCS ++ ".json") <$> [
-                    "colorschemes",
-                    "colorschemes/shell"
-                ]
+    let csNames = do
+            d <- ["colorschemes", "colorschemes/shell"]
+            base <- cfgDirs
+            return $ base </> d </> shellCS ++ ".json"
+
     rootCS <- loadLayeredConfigFiles csNames :: IO ColourSchemeConfig
 
     let modeCS = fromMaybe Map.empty $ do
@@ -62,12 +67,15 @@ main = parseArgs >>= \args -> do
 
     -- Themes - more complicated because we need to merge before parsing
     let default_top_theme = defaultTopTheme $ common config
-    let themeNames = [
+    let themePaths = do
+            cfg <- cfgDirs
+            theme <- [
                     default_top_theme ++ ".json",
                     "shell" </> "__main__.json",
                     "shell" </> shellTheme ++ ".json"
-                 ]
-    let themePaths = (cfgDir </>) . ("themes" </>) <$> themeNames
+                ]
+            return $ cfg </> "themes" </> theme
+
     themesThatExist <- filterM doesFileExist themePaths
     themeCfg <- loadLayeredConfigFiles themesThatExist :: IO ThemeConfig
 
@@ -101,6 +109,10 @@ main = parseArgs >>= \args -> do
             putChunks term . renderSegments renderInfo SRight $ concat right_prompt
             putStrLn ""
 
+
+-- Returns the config_files directory that is part of the powerline package installation.
+getSysConfigDir :: IO (Maybe String)
+getSysConfigDir = headMay <$> pySiteDirs "powerline"
 
 -- Loads a config file, throwing an exception if there was an error message
 loadConfigFile :: FromJSON a => FilePath -> IO a
