@@ -38,12 +38,14 @@ battSegment args _ = do
     let offlineSym = argLookup args "offline" ""
 
     -- TODO: gradient support
-    let renderSerious BattStatus{..} = Segment "battery" txt where
+    let hlGroup = HighlightGroup "battery" Nothing
+    let renderSerious BattStatus{..} = Segment hlGroup txt where
             txt = format acState (100 * charge)
             acState = if charging
                          then onlineSym
                          else offlineSym
 
+    -- TODO: implement gamelike
     let renderGamelike = undefined
 
     battStat <- takeFirstJust [sysfsBatt]

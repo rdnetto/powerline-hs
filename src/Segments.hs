@@ -56,7 +56,8 @@ generateSegment ctx (CS.Segment sFunc sBefore sAfter sArgs) = do
 
 -- Default handler
 missingHandler :: String -> SegmentHandler
-missingHandler func _ _ = return2 . Segment "background" $ red func
+missingHandler func _ _ = return2 . Segment hlGroup $ red func where
+    hlGroup = HighlightGroup "background" Nothing
 
 -- Helper function for error handling
 red :: String -> String

@@ -28,7 +28,7 @@ gitBranchSegment args _ = do
                then branchStatusGroup $ ignoreStatuses args
                else return $ Just "branch"
 
-    return . maybeToList $ liftM2 Segment hlGroup branch
+    return . maybeToList $ liftM2 Segment (flip HighlightGroup Nothing <$> hlGroup) branch
 
 branchStatusGroup :: [String] -> IO (Maybe String)
 branchStatusGroup blacklist = do

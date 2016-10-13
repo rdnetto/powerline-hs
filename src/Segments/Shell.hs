@@ -22,8 +22,8 @@ pipeStatusSegment _ args = return $ statusSegment <$> lastPipeStatus args
 
 -- Common logic for exit code segments
 statusSegment :: Int -> Segment
-statusSegment 0 = Segment "exit_success" "0"
-statusSegment x = Segment "exit_fail" (show x)
+statusSegment 0 = Segment (HighlightGroup "exit_success" Nothing) "0"
+statusSegment x = Segment (HighlightGroup "exit_fail" Nothing) (show x)
 
 -- powerline.segments.shell.cwd
 cwdSegment :: SegmentHandler
@@ -49,7 +49,8 @@ cwdSegment args ctx = do
     -- If combineSegs, use a single segment instead of multiple
     let pathComponents' = applyDepthLimit $ truncateParentComponents pathComponents
 
-    return $ Segment "cwd" <$> (
+    let hlGroup = HighlightGroup "cwd" Nothing
+    return $ Segment hlGroup <$> (
             if   combineSegs args
             then return $ joinPath pathComponents'
             else pathComponents'
@@ -60,10 +61,11 @@ jobNumSegment :: SegmentHandler
 jobNumSegment args ctx = do
     let showZero = argLookup args "show_zero" False
     let val = jobNum ctx
+    let hlGroup = HighlightGroup "jobnum" Nothing
 
     if val == 0 && not showZero
        then return []
-       else return2 . Segment "jobnum" $ show val
+       else return2 . Segment hlGroup $ show val
 
 -- powerline.segments.shell.mode
 modeSegment :: SegmentHandler
@@ -83,10 +85,11 @@ modeSegment args ctx = do
                      | otherwise             = Just m
 
     let overrideMode m = fromMaybe m $ Map.lookup m overrideDict
+    let hlGroup = HighlightGroup "mode" Nothing
 
     return . maybeToList $ do
         m <- ignoreMode =<< mode
-        return . Segment "mode" $ overrideMode m
+        return . Segment hlGroup $ overrideMode m
 
 -- Truncate parent components to this length
 maxParentLen :: SegmentArgs -> Maybe Int

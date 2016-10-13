@@ -32,7 +32,8 @@ uptimeSegment args _ = do
     let comps' = take segCount $ dropWhile ((== 0) . snd) comps
     let tupApply (f, x) = f x
     let txt = unwords $ map tupApply comps'
-    return [Segment "background" txt]
+    let hlGroup = HighlightGroup "background" Nothing
+    return2 $ Segment hlGroup txt
 
 timeComponents :: NominalDiffTime -> (Int, Int, Int, Int, Int)
 timeComponents t = (days, hrs, mins, secs, ms) where
@@ -46,9 +47,11 @@ timeComponents t = (days, hrs, mins, secs, ms) where
 -- powerline.segments.common.sys.cpu_load_percent
 cpuLoadPercentSegment :: SegmentHandler
 cpuLoadPercentSegment args _ = do
+    -- TODO: gradient support
     let format = pyFormat $ argLookup args "format" "{0:.0f}%"
+    let hlGroup = HighlightGroup "cpu_load_percent" Nothing
     usage <- cpuUsage
-    return2 . Segment "cpu_load_percent" $ format usage
+    return2 . Segment hlGroup $ format usage
 
 -- powerline.segments.common.sys.system_load
 cpuLoadAverageSegment :: SegmentHandler
@@ -62,8 +65,10 @@ cpuLoadAverageSegment args _ = do
     loadAvgs <- cpuLoadAverage
     let normAvgs = (/cpuCount) <$> loadAvgs
 
+
     -- TODO: use thresholds and normalised load to compute gradient value
-    return2 . Segment "system_load" . unwords $ format <$> loadAvgs
+    let hlGroup = HighlightGroup "system_load" Nothing
+    return2 . Segment hlGroup . unwords $ format <$> loadAvgs
 
 
 -- How long it has been since the system was booted.

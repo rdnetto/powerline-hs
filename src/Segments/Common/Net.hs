@@ -29,9 +29,10 @@ hostnameSegment args _ = do
                else return True
 
     let dropDomain = takeWhile (/= '.')
+    let hlGroup = HighlightGroup "hostname" Nothing
 
     if enabled
-       then return . Segment "hostname" . applyIf excludeDomain dropDomain <$> getHostName
+       then return . Segment hlGroup . applyIf excludeDomain dropDomain <$> getHostName
        else return []
 
 -- powerline.segments.common.net.internal_ip
@@ -54,7 +55,9 @@ internalIpSegment args _ = do
             . sortOn ((*) (-1) . flip (Map.findWithDefault 0) interfacePrefixScores . NetInfo.name)
             . filter (intfPred . NetInfo.name)
             <$> NetInfo.getNetworkInterfaces
-    return2 $ Segment "background" $ ipvX intf
+
+    let hlGroup = HighlightGroup "background" Nothing
+    return2 $ Segment hlGroup $ ipvX intf
 
 -- powerline.segments.common.net.external_ip
 externalIpSegment :: SegmentHandler
@@ -85,7 +88,8 @@ externalIpSegment args _ = do
 
                 else Just <$> readFile fp
 
-    return $ Segment "background" <$> maybeToList extIP
+    let hlGroup = HighlightGroup "background" Nothing
+    return $ Segment hlGroup <$> maybeToList extIP
 
 
 -- Assigns a score to an interface, based on its alphabetic prefix

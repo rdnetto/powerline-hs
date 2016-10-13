@@ -12,9 +12,10 @@ timeDateSegment :: SegmentHandler
 timeDateSegment args _ = do
     let isTime = argLookup args "istime" False
     let fmt = argLookup args "format" "%Y-%m-%d"
-    let hlGroup = if   isTime
-                  then "time"
-                  else "date"
+    let hlGroup = flip HighlightGroup Nothing $
+                    if   isTime
+                    then "time"
+                    else "date"
 
     t <- getZonedTime
     return2 $ Segment hlGroup $ formatTime defaultTimeLocale fmt t

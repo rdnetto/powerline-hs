@@ -1,4 +1,5 @@
 module Segments.Base(
+    HighlightGroup(..),
     PromptContext,
     Segment(..),
     SegmentArgs,
@@ -33,7 +34,7 @@ type SegmentHandler = SegmentArgs -> PromptContext -> IO [Segment]
 
 -- A rendered segment.
 data Segment = Segment {
-                    segmentGroup :: String,  -- highlight group used
+                    segmentGroup :: HighlightGroup,
                     segmentText  :: String   -- text in the segment
                 }
              | Divider {
@@ -42,18 +43,25 @@ data Segment = Segment {
                     divText :: String
                 } deriving (Show, Eq)
 
+data HighlightGroup = HighlightGroup {
+                        hlGroup :: String,                      -- simple highlight group to use
+                        hlGradient :: Maybe (String, Float)     -- gradient and value, if defined
+                    } deriving (Show, Eq)
+
 modifySegText :: (String -> String) -> Segment -> Segment
 modifySegText f s = s { segmentText = f (segmentText s) }
 
 
 -- Wrapper for handlers which don't use any context
 simpleHandler :: String -> IO (Maybe String) -> SegmentHandler
-simpleHandler hlGroup f _ _ = maybeToList <$> Segment hlGroup `lift2` f where
+simpleHandler hlGroupName f _ _ = maybeToList <$> Segment hlGroup' `lift2` f where
     lift2 = liftM . liftM
+    hlGroup' = HighlightGroup hlGroupName Nothing
 
 -- Wrapper for handlers which show a value provided in the command args
 contextHandler :: Show a => String -> (CommandArgs -> a) -> SegmentHandler
-contextHandler hlGroup field _ args = return2 . Segment hlGroup . show $ field args
+contextHandler hlGroupName field _ args = return2 . Segment hlGroup' . show $ field args where
+    hlGroup' = HighlightGroup hlGroupName Nothing
 
 -- Helper method: returns the path to a file with the given name.
 -- Ensures the parent directory exists.

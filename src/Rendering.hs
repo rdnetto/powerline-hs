@@ -8,7 +8,7 @@ import Rainbow
 import Safe
 
 import qualified ConfigSchema as CS
-import Segments.Base (Segment(..), modifySegText)
+import Segments.Base (Segment(..), HighlightGroup(..), modifySegText)
 import Util
 
 -- Applies formatting to a Chunk
@@ -27,11 +27,11 @@ data RenderInfo = RenderInfo {
 -- Render a segment
 renderSegment :: RenderInfo -> Segment -> Chunk String
 renderSegment rinfo@RenderInfo{..} Segment{..} = res where
-    hlGroup = segmentGroup
 
-    fmt = if   hlGroup == ""
+    -- TODO add gradient support
+    fmt = if   hlGroup segmentGroup == ""
           then id
-          else formatChunk colourDict . fromJust $ lookupStyle rinfo hlGroup
+          else formatChunk colourDict . fromJust $ lookupStyle rinfo (hlGroup segmentGroup)
 
     res = fmt . chunk $ segmentText
 renderSegment _ Divider{..} = res where
@@ -60,13 +60,14 @@ renderSegments rInfo@RenderInfo{..} s segments = res where
                   else Divider divFore   divBack   divText
 
             -- Use explicit styling from previous segment
+            hlSegGroup = hlGroup . segmentGroup
             (styleFore, styleBack) = styleTuple rInfo . headNote ("looking up segmentGroup " ++ show (segmentGroup prev)) . catMaybes $ lookupStyle rInfo <$> [
-                    segmentGroup prev ++ ":divider",    -- segment[segment["divider_highlight_group"] = "time:divider"]
-                    segmentGroup prev                   -- Fallback to the normal styling for that segment
+                    hlSegGroup prev ++ ":divider",    -- segment[segment["divider_highlight_group"] = "time:divider"]
+                    hlSegGroup prev                   -- Fallback to the normal styling for that segment
                 ]
 
             -- Lookup style from adjacent segments
-            hlTuple seg = styleTuple rInfo $ lookupStyle rInfo (segmentGroup seg) `withDef` lookupStyle rInfo "background"
+            hlTuple seg = styleTuple rInfo $ lookupStyle rInfo (hlSegGroup seg) `withDef` lookupStyle rInfo "background"
             (_, prevBack) = hlTuple prev
             (_, nextBack) = hlTuple next
 
@@ -80,7 +81,7 @@ renderSegments rInfo@RenderInfo{..} s segments = res where
     insertDivs = intersperseBy makeDiv
 
     -- Special case to add dividers to the ends.
-    addEndDiv xs = let bg = Segment "background" ""
+    addEndDiv xs = let bg = Segment (HighlightGroup "background" Nothing) ""
                    in case s of
                            SLeft  -> xs ++ [makeDiv (last xs) bg]
                            SRight -> makeDiv bg (head xs) : xs

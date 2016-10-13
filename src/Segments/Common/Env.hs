@@ -11,8 +11,9 @@ import Segments.Base
 envSegment :: SegmentHandler
 envSegment args _ = do
     let var = argLookup args "variable" ""
+    let hlGroup = HighlightGroup "background" Nothing
     value <- lookupEnv var
-    return $ maybeToList (Segment "background" <$> value)
+    return $ maybeToList (Segment hlGroup <$> value)
 
 -- powerline.segments.common.env.user
 userSegment :: SegmentHandler
@@ -23,9 +24,10 @@ userSegment args _ = do
     user <- getLoginName
     isRoot <- (== 0) <$> getEffectiveUserID
 
-    let hlGroup = if isRoot
-                     then "superuser"
-                     else "user"
+    let hlGroup = flip HighlightGroup Nothing $
+                    if isRoot
+                    then "superuser"
+                    else "user"
 
     let dropDomain = if hideDomain
                         then takeWhile (/= '@')
