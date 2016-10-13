@@ -54,10 +54,11 @@ defaultTopTheme cfg = fromMaybe def val where
 
 -- colors.json
 type ColourDict = Map String Colour
+type GradientDict = Map String ColourGradient
 
 data ColourConfig = ColourConfig {
     colors :: ColourDict,
-    gradients :: DontCare
+    gradients :: GradientDict
 } deriving (Generic, Show)
 instance FromJSON ColourConfig
 
@@ -67,15 +68,26 @@ data Colour = CtermColour Word8
             deriving (Generic, Show)
 
 instance FromJSON Colour where
-    parseJSON x@(Number _) = withScientific "Colour" f x where
-        f n | isInteger n && inRange n = return . CtermColour . fromJust $ toBoundedInteger n
-            | otherwise                = typeMismatch "Colour" x
-        inRange n = 0 <= n && n < 256
+    parseJSON x@(Number _) = CtermColour <$> parseJSON x where
     parseJSON (Array arr) =
         case toList arr of
-            [Number c, String h] -> return $ TrueColour (fromJust $ toBoundedInteger c) h
+            [Number c, String h] -> TrueColour <$> parseJSON (Number c) <*> pure h
             _                    -> typeMismatch "Colour" (Array arr)
     parseJSON invalid = typeMismatch "Colour" invalid
+
+-- We use two lists instead of one so that more colours can be used for the true colour gradient
+data ColourGradient = CtermGradient [Word8]
+                    | TrueGradient [Word8] [Text]
+                    deriving (Generic, Show)
+
+instance FromJSON ColourGradient where
+    parseJSON (Array arr) =
+        case toList arr of
+             [cs]     -> CtermGradient <$> parseJSON cs
+             [cs, ts] -> TrueGradient  <$> parseJSON cs <*> pure ts
+             _        -> typeMismatch "ColourGradient" (Array arr)
+    parseJSON invalid = typeMismatch "ColourGradient" invalid
+
 
 -- colorschemes/*.json
 
