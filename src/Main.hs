@@ -8,7 +8,7 @@ import Data.Function ((&))
 import Data.List (foldl1', intercalate)
 import qualified Data.Map.Lazy as Map
 import Data.Map.Lazy.Merge
-import Data.Maybe (fromJust, fromMaybe, maybeToList)
+import Data.Maybe (catMaybes, fromJust, fromMaybe, maybeToList)
 import Rainbow (byteStringMakerFromEnvironment)
 import Safe (headMay)
 import System.Directory (doesFileExist)
@@ -132,10 +132,15 @@ loadLayeredConfigFiles paths = do
 -- Layer a segment over the corresponding segment data
 layerSegments :: Map.Map String SegmentData -> Segment -> Segment
 layerSegments segmentData s = Segment (function s) before' after' args' where
-    -- for powerline.segments.common.net.hostname, assume the segment has key 'hostname'
-    key = tail . takeExtension $ function s
+    -- segments can be referred to by either their fully qualified name, or its last component
+    -- for e.g. powerline.segments.common.net.hostname, it's 'hostname'
+    key = function s
+    abbreviatedKey = tail $ takeExtension key
 
-    sd = Map.lookup key segmentData
+    sd = headMay $ catMaybes [
+            Map.lookup key segmentData,
+            Map.lookup abbreviatedKey segmentData
+        ]
     before' = before s `orElse` (sdBefore =<< sd)
     after'  = after s  `orElse` (sdAfter =<< sd)
     args' = Just $ leftBiasedMerge (maybeMap $ args s) (maybeMap $ sdArgs =<< sd)
