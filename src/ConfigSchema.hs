@@ -8,8 +8,7 @@ import Data.Aeson
 import Data.Aeson.Types
 import Data.Map (Map)
 import qualified Data.Map.Lazy as MapL
-import Data.Maybe (fromJust, fromMaybe)
-import Data.Scientific
+import Data.Maybe (fromMaybe)
 import Data.Text (Text, unpack)
 import Data.Vector as V hiding ((++))
 import Data.Word (Word8)
@@ -57,10 +56,14 @@ type ColourDict = Map String Colour
 type GradientDict = Map String ColourGradient
 
 data ColourConfig = ColourConfig {
-    colors :: ColourDict,
-    gradients :: GradientDict
+    colourDict   :: ColourDict,
+    gradientDict :: GradientDict
 } deriving (Generic, Show)
-instance FromJSON ColourConfig
+
+instance FromJSON ColourConfig where
+    parseJSON (Object obj) = ColourConfig <$> obj .: "colors"
+                                          <*> obj .: "gradients"
+    parseJSON invalid = typeMismatch "ColourConfig" invalid
 
 -- Colours can be represented as the cterm code with an optional 24-bit hex representation. e.g. [1, "#AABBCC"]
 data Colour = CtermColour Word8
@@ -84,7 +87,7 @@ instance FromJSON ColourGradient where
     parseJSON (Array arr) =
         case toList arr of
              [cs]     -> CtermGradient <$> parseJSON cs
-             [cs, ts] -> TrueGradient  <$> parseJSON cs <*> pure ts
+             [cs, ts] -> TrueGradient  <$> parseJSON cs <*> parseJSON ts
              _        -> typeMismatch "ColourGradient" (Array arr)
     parseJSON invalid = typeMismatch "ColourGradient" invalid
 
@@ -113,6 +116,7 @@ instance FromJSON TerminalColourEntry where
     parseJSON (String s)   = return . TerminalColourRef $ unpack s
     parseJSON invalid      = typeMismatch "TerminalColourEntry" invalid
 
+-- Despite the name, fg and bg can refer to either simple colours or gradients
 data TerminalColour = TerminalColour {
     fg :: String,
     bg :: String,

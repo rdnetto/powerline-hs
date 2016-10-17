@@ -37,9 +37,8 @@ battSegment args _ = do
     let onlineSym  = argLookup args "online" "C"
     let offlineSym = argLookup args "offline" ""
 
-    -- TODO: gradient support
-    let hlGroup = HighlightGroup "battery" Nothing
     let renderSerious BattStatus{..} = Segment hlGroup txt where
+            hlGroup = HighlightGroup "battery_gradient" (Just $ 1 - charge)
             txt = format acState (100 * charge)
             acState = if charging
                          then onlineSym

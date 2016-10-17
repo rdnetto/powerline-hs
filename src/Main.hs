@@ -82,7 +82,7 @@ main = parseArgs >>= \args -> do
     -- Needed for rendering
     let numSpaces = fromMaybe 1 $ spaces themeCfg
     let divCfg = themeCfg & dividers & fromJust
-    let renderInfo = RenderInfo (colors colours) cs divCfg numSpaces
+    let renderInfo = RenderInfo colours cs divCfg numSpaces
     term <- byteStringMakerFromEnvironment
 
     case debugSegment args of

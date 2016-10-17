@@ -8,7 +8,7 @@ import Rainbow
 import Safe
 
 import qualified ConfigSchema as CS
-import Segments.Base (Segment(..), HighlightGroup(..), modifySegText)
+import Segments.Base (GradientWeight, Segment(..), HighlightGroup(..), modifySegText)
 import Util
 
 -- Applies formatting to a Chunk
@@ -18,20 +18,20 @@ type ChunkFormatter = Chunk String -> Chunk String
 type RainbowRenderer a = Chunk a -> [ByteString] -> [ByteString]
 
 data RenderInfo = RenderInfo {
-    colourDict   :: CS.ColourDict,
+    colourConfig :: CS.ColourConfig,
     colourScheme :: CS.ColourScheme,
     dividers     :: CS.ForBothSides CS.Divider,
     numSpaces    :: Int
-}
+} deriving Show
 
 -- Render a segment
 renderSegment :: RenderInfo -> Segment -> Chunk String
 renderSegment rinfo@RenderInfo{..} Segment{..} = res where
+    HighlightGroup hGroup gradientWeight = segmentGroup
 
-    -- TODO add gradient support
-    fmt = if   hlGroup segmentGroup == ""
+    fmt = if   hGroup == ""
           then id
-          else formatChunk colourDict . fromJust $ lookupStyle rinfo (hlGroup segmentGroup)
+          else formatChunk colourConfig gradientWeight . fromJust $ lookupStyle rinfo segmentGroup
 
     res = fmt . chunk $ segmentText
 renderSegment _ Divider{..} = res where
@@ -61,13 +61,15 @@ renderSegments rInfo@RenderInfo{..} s segments = res where
 
             -- Use explicit styling from previous segment
             hlSegGroup = hlGroup . segmentGroup
+            simpleHGroup n = HighlightGroup n Nothing
+
             (styleFore, styleBack) = styleTuple rInfo . headNote ("looking up segmentGroup " ++ show (segmentGroup prev)) . catMaybes $ lookupStyle rInfo <$> [
-                    hlSegGroup prev ++ ":divider",    -- segment[segment["divider_highlight_group"] = "time:divider"]
-                    hlSegGroup prev                   -- Fallback to the normal styling for that segment
+                    simpleHGroup $ hlSegGroup prev ++ ":divider",    -- segment[segment["divider_highlight_group"] = "time:divider"]
+                    simpleHGroup $ hlSegGroup prev                   -- Fallback to the normal styling for that segment
                 ]
 
             -- Lookup style from adjacent segments
-            hlTuple seg = styleTuple rInfo $ lookupStyle rInfo (hlSegGroup seg) `withDef` lookupStyle rInfo "background"
+            hlTuple seg = styleTuple rInfo $ lookupStyle rInfo (segmentGroup seg) `withDef` lookupStyle rInfo (simpleHGroup "background")
             (_, prevBack) = hlTuple prev
             (_, nextBack) = hlTuple next
 
@@ -100,19 +102,36 @@ renderSegments rInfo@RenderInfo{..} s segments = res where
 putChunks :: RainbowRenderer a -> [Chunk a] -> IO ()
 putChunks renderer = mapM_ BS.putStr . chunksToByteStrings renderer
 
-formatChunk :: CS.ColourDict -> CS.TerminalColour -> ChunkFormatter
-formatChunk colourDict CS.TerminalColour {..} = fg' . bg' . attrs' where
-    fg' = fore . toRadiant $ Map.lookup fg colourDict `withDef` error ("Unknown colour: " ++ fg)
-    bg' = back . toRadiant $ Map.lookup bg colourDict `withDef` error ("Unknown colour: " ++ bg)
+formatChunk :: CS.ColourConfig -> Maybe GradientWeight -> CS.TerminalColour -> ChunkFormatter
+formatChunk CS.ColourConfig{..} gradWeight CS.TerminalColour{..} = fg' . bg' . attrs' where
+    -- name can be either the name of a colour or a gradient - depends on gradWeight
+    lookupCol name = case gradWeight of
+                       Nothing -> fromJustNote ("Unknown colour: " ++ name) $ Map.lookup name colourDict
+                       Just gw -> head $ catMaybes [
+                                    -- If a gradient doesn't exist with this name, it's probably a colour
+                                    -- This is needed because the gradient is typically used for the one, but not both, of fg/bg
+                                    applyWeight gw <$> Map.lookup name gradientDict,
+                                    Map.lookup name colourDict,
+                                    Just $ error ("Unknown gradient/colour: " ++ name)
+                                  ]
+
+    fg' = fore . toRadiant $ lookupCol fg
+    bg' = back . toRadiant $ lookupCol bg
     attrs' = foldl (.) id $ toChunkFormatter <$> attrs
 
-lookupStyle :: RenderInfo -> String -> Maybe CS.TerminalColour
-lookupStyle RenderInfo{..} k = Map.lookup k colourScheme
+-- Resolves a gradient weight and a gradient to a colour
+applyWeight :: GradientWeight -> CS.ColourGradient -> CS.Colour
+applyWeight gw (CS.CtermGradient xs)   = CS.CtermColour (pick gw xs)
+applyWeight gw (CS.TrueGradient xs ys) = CS.TrueColour (pick gw xs) (pick gw ys)
+
+lookupStyle :: RenderInfo -> HighlightGroup -> Maybe CS.TerminalColour
+lookupStyle RenderInfo{..} (HighlightGroup k _) = Map.lookup k colourScheme
 
 -- Converts a TerminalColour to a (foreground, background) tuple
 styleTuple :: RenderInfo -> CS.TerminalColour -> (Radiant, Radiant)
-styleTuple RenderInfo{..} CS.TerminalColour{..} = mapBoth f (fg, bg) where
-    f x = toRadiant $ Map.lookup x colourDict `withDef` Map.lookup "background" colourDict
+styleTuple rInfo CS.TerminalColour{..} = mapBoth f (fg, bg) where
+    f x = toRadiant $ Map.lookup x colDict `withDef` Map.lookup "background" colDict
+    colDict = CS.colourDict $ colourConfig rInfo
 
 -- Appends the first list to the specified side of the second.
 appendSide :: Side -> [a] -> [a] -> [a]
@@ -124,6 +143,11 @@ appendSide SRight = flip (++)
 toRadiant :: CS.Colour -> Radiant
 toRadiant (CS.CtermColour x)  = color256 x
 toRadiant (CS.TrueColour x _) = color256 x
+
+-- Selects the (N*f)th element in a list
+pick :: Float -> [a] -> a
+pick f xs = xs !! round i where
+    i = f * fromIntegral (length xs)
 
 toChunkFormatter :: String -> ChunkFormatter
 toChunkFormatter "bold" = bold

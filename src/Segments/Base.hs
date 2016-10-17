@@ -1,4 +1,5 @@
 module Segments.Base(
+    GradientWeight,
     HighlightGroup(..),
     PromptContext,
     Segment(..),
@@ -43,9 +44,10 @@ data Segment = Segment {
                     divText :: String
                 } deriving (Show, Eq)
 
+type GradientWeight = Float
 data HighlightGroup = HighlightGroup {
-                        hlGroup :: String,                      -- simple highlight group to use
-                        hlGradient :: Maybe (String, Float)     -- gradient and value, if defined
+                        hlGroup :: String,                  -- highlight group to use - may be colour or gradient
+                        hlValue :: Maybe GradientWeight     -- gradient value, if defined. Value spans 0 (least alert) to 1 (most alert)
                     } deriving (Show, Eq)
 
 modifySegText :: (String -> String) -> Segment -> Segment
