@@ -97,17 +97,14 @@ main = parseArgs >>= \args -> do
             let segments' = layerSegments (segment_data themeCfg) `fmap2` segments themeCfg
 
             -- Generate prompt
-            left_prompt  <- generateSegment args `mapM` left  segments'
-            right_prompt <- generateSegment args `mapM` right segments'
+            when (renderSide args `elem` [RSLeft, RSAboveLeft]) $ do
+                left_prompt  <- generateSegment args `mapM` left  segments'
+                putChunks term . renderSegments renderInfo SLeft $ concat left_prompt
 
-            -- Actually render the prompts
-            putStrLn "Left:"
-            putChunks term . renderSegments renderInfo SLeft $ concat left_prompt
-            putStrLn ""
+            when (renderSide args == RSRight) $ do
+                right_prompt <- generateSegment args `mapM` right segments'
+                putChunks term . renderSegments renderInfo SRight $ concat right_prompt
 
-            putStrLn "Right:"
-            putChunks term . renderSegments renderInfo SRight $ concat right_prompt
-            putStrLn ""
 
 
 -- Returns the config_files directory that is part of the powerline package installation.

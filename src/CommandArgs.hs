@@ -19,9 +19,10 @@ data CommandArgs = CommandArgs {
                     debugSegment   :: Maybe String,
                     extension      :: String,
                     renderSide     :: RenderSide
-                }
+                } deriving (Show)
 
 data RenderSide = RSLeft | RSRight | RSAbove | RSAboveLeft
+    deriving (Eq, Show)
 
 type RendererArgs = Map.Map String String
 
