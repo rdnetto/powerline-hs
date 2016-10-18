@@ -69,7 +69,7 @@ renderSegments rInfo@RenderInfo{..} s segments = res where
                 ]
 
             -- Lookup style from adjacent segments
-            hlTuple seg = styleTuple rInfo $ lookupStyle rInfo (segmentGroup seg) `withDef` lookupStyle rInfo (simpleHGroup "background")
+            hlTuple seg = styleTuple rInfo $ lookupStyleWithFallback rInfo (segmentGroup seg) (simpleHGroup "background")
             (_, prevBack) = hlTuple prev
             (_, nextBack) = hlTuple next
 
@@ -127,11 +127,27 @@ applyWeight gw (CS.TrueGradient xs ys) = CS.TrueColour (pick gw xs) (pick gw ys)
 lookupStyle :: RenderInfo -> HighlightGroup -> Maybe CS.TerminalColour
 lookupStyle RenderInfo{..} (HighlightGroup k _) = Map.lookup k colourScheme
 
+unsafeLookupStyle :: RenderInfo -> HighlightGroup -> CS.TerminalColour
+unsafeLookupStyle RenderInfo{..} (HighlightGroup k _) = res where
+    res = case Map.lookup k colourScheme of
+               Just x  -> x
+               Nothing -> error $ "Could not find style with name " ++ k
+
+lookupStyleWithFallback :: RenderInfo -> HighlightGroup -> HighlightGroup -> CS.TerminalColour
+lookupStyleWithFallback rInfo s fb = res where
+    res = head $ catMaybes [
+            lookupStyle rInfo s,
+            lookupStyle rInfo fb,
+            error $ "Could not find styles with names " ++ show [s, fb]
+        ]
+
 -- Converts a TerminalColour to a (foreground, background) tuple
 styleTuple :: RenderInfo -> CS.TerminalColour -> (Radiant, Radiant)
-styleTuple rInfo CS.TerminalColour{..} = mapBoth f (fg, bg) where
-    f x = toRadiant $ Map.lookup x colDict `withDef` Map.lookup "background" colDict
+styleTuple rInfo CS.TerminalColour{..} = (f fg defaultFg, f bg defaultBg) where
+    f x def = toRadiant $ lookupCol x `withDef` lookupCol def
+    lookupCol name = Map.lookup name colDict
     colDict = CS.colourDict $ colourConfig rInfo
+    CS.TerminalColour defaultFg defaultBg _ = unsafeLookupStyle rInfo $ HighlightGroup "background" Nothing
 
 -- Appends the first list to the specified side of the second.
 appendSide :: Side -> [a] -> [a] -> [a]
