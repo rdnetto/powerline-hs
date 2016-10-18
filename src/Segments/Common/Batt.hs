@@ -45,11 +45,11 @@ battSegment args _ = do
                          else offlineSym
 
     -- TODO: implement gamelike
-    let renderGamelike = undefined
+    let renderGamelike = renderSerious
 
     battStat <- takeFirstJust [sysfsBatt]
     return $ case (gamify, battStat) of
-                  (True,  Just bs) -> renderGamelike bs
+                  (True,  Just bs) -> [renderGamelike bs]
                   (False, Just bs) -> [renderSerious bs]
                   (_, Nothing) -> []
 
