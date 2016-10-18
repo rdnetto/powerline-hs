@@ -118,3 +118,10 @@ return2 = return . return
 map2 :: (Monad m1, Monad m2) => (a -> b) -> m1 (m2 a) -> m1 (m2 b)
 map2 = fmap . fmap
 
+-- Limits a value to being in the specified range
+saturate :: Ord a => a -> a -> a -> a
+saturate minV maxV v | minV > maxV = error "minV must be less than or equal to maxV"
+                     | minV > v    = minV
+                     | maxV < v    = maxV
+                     | otherwise   = v
+

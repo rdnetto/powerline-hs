@@ -161,9 +161,11 @@ toRadiant (CS.CtermColour x)  = color256 x
 toRadiant (CS.TrueColour x _) = color256 x
 
 -- Selects the (N*f)th element in a list
+-- If f is out of bounds, it's rounded to the nearest value.
 pick :: Float -> [a] -> a
-pick f xs = xs !! round i where
-    i = f * fromIntegral (length xs)
+pick f xs = xs !! i where
+    i = saturate 0 (n - 1) . round $ f * fromIntegral n
+    n = length xs
 
 toChunkFormatter :: String -> ChunkFormatter
 toChunkFormatter "bold" = bold

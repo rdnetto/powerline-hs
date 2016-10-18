@@ -47,10 +47,9 @@ timeComponents t = (days, hrs, mins, secs, ms) where
 -- powerline.segments.common.sys.cpu_load_percent
 cpuLoadPercentSegment :: SegmentHandler
 cpuLoadPercentSegment args _ = do
-    -- TODO: gradient support
-    let format = pyFormat $ argLookup args "format" "{0:.0f}%"
-    let hlGroup = HighlightGroup "cpu_load_percent" Nothing
     usage <- cpuUsage
+    let format = pyFormat $ argLookup args "format" "{0:.0f}%"
+    let hlGroup = HighlightGroup "cpu_load_percent_gradient" (Just $ usage / 100)
     return2 . Segment hlGroup $ format usage
 
 -- powerline.segments.common.sys.system_load
@@ -65,10 +64,10 @@ cpuLoadAverageSegment args _ = do
     loadAvgs <- cpuLoadAverage
     let normAvgs = (/cpuCount) <$> loadAvgs
 
-
-    -- TODO: use thresholds and normalised load to compute gradient value
-    let hlGroup = HighlightGroup "system_load" Nothing
-    return2 . Segment hlGroup . unwords $ format <$> loadAvgs
+    -- Each load average is displayed in a separate segment
+    let hlGroup normAvg = HighlightGroup "system_load_gradient" . Just $ (normAvg - thresholdGood) / (thresholdBad - thresholdGood)
+    let toSeg normAvg = Segment (hlGroup normAvg) (format normAvg)
+    return $ toSeg <$> loadAvgs
 
 
 -- How long it has been since the system was booted.
@@ -146,5 +145,4 @@ cpuUsage = do
     let idleTime = idle vals1 + iowait vals1 - (idle vals0 + iowait vals0)
 
     return $ 100 * (1 - idleTime / totalTime)
-
 
