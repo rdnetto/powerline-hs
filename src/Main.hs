@@ -83,12 +83,12 @@ main = parseArgs >>= \args -> do
     let numSpaces = fromMaybe 1 $ spaces themeCfg
     let divCfg = themeCfg & dividers & fromJust
     let renderInfo = RenderInfo colours cs divCfg numSpaces
-    term <- byteStringMakerFromEnvironment
+    putChunks' <- putChunks (rendererModule args) <$> byteStringMakerFromEnvironment
 
     case debugSegment args of
         Just segName -> do
             segs <- generateSegment args . layerSegments (segment_data themeCfg) $ Segment segName Nothing Nothing Nothing
-            putChunks term $ renderSegments renderInfo SLeft segs
+            putChunks' $ renderSegments renderInfo SLeft segs
             putStrLn ""
 
         Nothing -> do
@@ -99,11 +99,11 @@ main = parseArgs >>= \args -> do
             -- Generate prompt
             when (renderSide args `elem` [RSLeft, RSAboveLeft]) $ do
                 left_prompt  <- generateSegment args `mapM` left  segments'
-                putChunks term . renderSegments renderInfo SLeft $ concat left_prompt
+                putChunks' . renderSegments renderInfo SLeft $ concat left_prompt
 
             when (renderSide args == RSRight) $ do
                 right_prompt <- generateSegment args `mapM` right segments'
-                putChunks term . renderSegments renderInfo SRight $ concat right_prompt
+                putChunks' . renderSegments renderInfo SRight $ concat right_prompt
 
 
 

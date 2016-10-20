@@ -1,15 +1,21 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Rendering(putChunks, renderSegments, RenderInfo(RenderInfo)) where
 
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Map.Lazy as Map
 import Data.Maybe (fromJust, catMaybes)
+import qualified Data.Text as T
+import Data.Text.Encoding (encodeUtf8)
 import Prelude hiding (lookup, div)
 import Rainbow
 import Safe
 
+import CommandArgs (RendererModule(..))
 import qualified ConfigSchema as CS
 import Segments.Base (GradientWeight, Segment(..), HighlightGroup(..), modifySegText)
-import Util
+import Util hiding (replace)
 
 -- Applies formatting to a Chunk
 type ChunkFormatter = Chunk String -> Chunk String
@@ -99,8 +105,18 @@ renderSegments rInfo@RenderInfo{..} s segments = res where
     res = map (renderSegment rInfo) . addEndDiv . insertDivs . map (modifySegText pad) . padEnd $ segments
 
 -- Helper method for rendering chunks
-putChunks :: RainbowRenderer a -> [Chunk a] -> IO ()
-putChunks renderer = mapM_ BS.putStr . chunksToByteStrings renderer
+-- Implements escaping rules for shell prompts. i.e. wraps the ANSI formatting literals in (startEsc, endEsc) pairs
+putChunks :: RendererModule -> RainbowRenderer BS.ByteString -> [Chunk String] -> IO ()
+putChunks rm renderer cs = do
+        BS.putStr $ encodeUtf8 startEsc
+        mapM_ BS.putStr . chunksToByteStrings renderer $ map2 (encodeUtf8 . surround . escaper . T.pack) cs
+        BS.putStr $ encodeUtf8 endEsc
+    where
+        surround s = endEsc <> s <> startEsc
+        (startEsc, endEsc, escaper) = case rm of
+                                           RMRaw  -> ("", "", id)
+                                           RMBash -> ("\\[", "\\]", T.replace "\\" "\\\\")
+                                           RMZsh  -> ("%{", "%}", T.replace "%" "%%")
 
 formatChunk :: CS.ColourConfig -> Maybe GradientWeight -> CS.TerminalColour -> ChunkFormatter
 formatChunk CS.ColourConfig{..} gradWeight CS.TerminalColour{..} = fg' . bg' . attrs' where

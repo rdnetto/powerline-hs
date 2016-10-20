@@ -115,7 +115,7 @@ takeFirstJust [] = return Nothing
 return2 :: (Monad m1, Monad m2) => a -> m1 (m2 a)
 return2 = return . return
 
-map2 :: (Monad m1, Monad m2) => (a -> b) -> m1 (m2 a) -> m1 (m2 b)
+map2 :: (Functor m1, Functor m2) => (a -> b) -> m1 (m2 a) -> m1 (m2 b)
 map2 = fmap . fmap
 
 -- Limits a value to being in the specified range

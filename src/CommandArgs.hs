@@ -10,7 +10,7 @@ import Text.ParserCombinators.ReadP (char, munch1, sepBy1, readP_to_S)
 
 
 data CommandArgs = CommandArgs {
-                    rendererModule :: String,
+                    rendererModule :: RendererModule,
                     rendererArgs   :: RendererArgs,
                     promptWidth    :: Int,
                     lastExitCode   :: Int,
@@ -21,19 +21,23 @@ data CommandArgs = CommandArgs {
                     renderSide     :: RenderSide
                 } deriving (Show)
 
-data RenderSide = RSLeft | RSRight | RSAbove | RSAboveLeft
+data RendererModule = RMRaw | RMZsh | RMBash
     deriving (Eq, Show)
 
 type RendererArgs = Map.Map String String
 
+data RenderSide = RSLeft | RSRight | RSAbove | RSAboveLeft
+    deriving (Eq, Show)
+
 
 argParser :: Parser CommandArgs
 argParser = CommandArgs
-            <$> strOption (  long "renderer-module"
+            <$> (option rmReader
+                          (  long "renderer-module"
                           <> short 'r'
                           <> metavar "MODULE"
                           <> help "Renderer module. e.g. .zsh"
-                          )
+                          ) <|> pure RMRaw)
             <*> rendererArgsOption (  long "renderer-arg"
                           <> metavar "ARG=VALUE"
                           <> help "Additional information for the renderer."
@@ -117,4 +121,13 @@ sideReader = do
     case lookup arg sides of
         Just x  -> return x
         Nothing -> fail $ "'" ++ arg ++ "' is not one of: " ++ show validSides
+
+rmReader ::  ReadM RendererModule
+rmReader = do
+    arg <- readerAsk
+
+    return $ case arg of
+                  ".zsh"  -> RMZsh
+                  ".bash" -> RMBash
+                  unknown -> error $ "Unknown renderer module: " ++ unknown
 
