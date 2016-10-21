@@ -14,11 +14,19 @@ import Util
 
 -- powerline.segments.shell.last_status
 lastStatusSegment :: SegmentHandler
-lastStatusSegment _ args = return2 . statusSegment . last $ lastPipeStatus args
+lastStatusSegment _ args =
+    case last $ lastPipeStatus args of
+         0 -> return []
+         x -> return2 $ statusSegment x
 
 -- powerline.segments.shell.last_pipe_status
 pipeStatusSegment :: SegmentHandler
-pipeStatusSegment _ args = return $ statusSegment <$> lastPipeStatus args
+pipeStatusSegment _ args = return res where
+    statuses = lastPipeStatus args
+
+    res = if any (/= 0) statuses
+             then statusSegment <$> statuses
+             else []
 
 -- Common logic for exit code segments
 statusSegment :: Int -> Segment
