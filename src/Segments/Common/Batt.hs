@@ -35,7 +35,7 @@ battSegment args _ = do
     let fullHeart  = argLookup args "full_heart" "O"
     let emptyHeart = argLookup args "empty_heart" "O"
     let onlineSym  = argLookup args "online" "C"
-    let offlineSym = argLookup args "offline" ""
+    let offlineSym = argLookup args "offline" " "
 
     let renderSerious BattStatus{..} = Segment hlGroup txt where
             hlGroup = HighlightGroup "battery_gradient" (Just $ 1 - charge)

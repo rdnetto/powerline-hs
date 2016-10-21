@@ -141,10 +141,16 @@ convertFmt FormatStr{..} = res where
             Just "%",
             convAlign <$> fillAlign,
             convSign <$> numericSign,
-            show <$> formatWidth,
+            show <$> formatWidth',
             ('.':) . show <$> formatPrecision,
             Just formatChar'
         ]
+
+    -- width includes percentage symbol
+    formatWidth' = f <$> formatWidth
+        where f = if formatChar == Just '%'
+                     then pred
+                     else id
 
     formatChar' = case formatChar of
                        Just '%' -> "v%%"                -- Don't process percentage signs, as printf doesn't support them

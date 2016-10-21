@@ -3,7 +3,6 @@
 module Rendering(putChunks, renderSegments, RenderInfo(RenderInfo)) where
 
 import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Map.Lazy as Map
 import Data.Maybe (fromJust, catMaybes)
 import qualified Data.Text as T

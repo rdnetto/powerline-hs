@@ -125,3 +125,7 @@ saturate minV maxV v | minV > maxV = error "minV must be less than or equal to m
                      | maxV < v    = maxV
                      | otherwise   = v
 
+boolToInt :: Bool -> Int
+boolToInt True = 1
+boolToInt False = 0
+
