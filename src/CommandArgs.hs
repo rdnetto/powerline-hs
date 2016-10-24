@@ -32,12 +32,12 @@ data RenderSide = RSLeft | RSRight | RSAbove | RSAboveLeft
 
 argParser :: Parser CommandArgs
 argParser = CommandArgs
-            <$> (option rmReader
+            <$> defOption RMRaw rmReader
                           (  long "renderer-module"
                           <> short 'r'
                           <> metavar "MODULE"
                           <> help "Renderer module. e.g. .zsh"
-                          ) <|> pure RMRaw)
+                          )
             <*> rendererArgsOption (  long "renderer-arg"
                           <> metavar "ARG=VALUE"
                           <> help "Additional information for the renderer."
@@ -76,6 +76,10 @@ parseArgs = execParser opts where
                 (fullDesc
                 <> progDesc "Powerline clone - generates shell prompts and statuslines."
                 )
+
+-- Convenience function for options which have a default value
+defOption :: a -> ReadM a -> Mod OptionFields a -> Parser a
+defOption def p m = option p m <|> pure def
 
 intOption :: Mod OptionFields Int -> Parser Int
 intOption = option auto
