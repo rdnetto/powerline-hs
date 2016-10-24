@@ -12,7 +12,7 @@ import Text.ParserCombinators.ReadP (char, munch1, sepBy1, readP_to_S)
 data CommandArgs = CommandArgs {
                     rendererModule :: RendererModule,
                     rendererArgs   :: RendererArgs,
-                    promptWidth    :: Int,
+                    promptWidth    :: Maybe Int,        -- If not present, don't need to drop segments.
                     lastExitCode   :: Int,
                     lastPipeStatus :: [Int],
                     jobNum         :: Int,
@@ -42,7 +42,8 @@ argParser = CommandArgs
                           <> metavar "ARG=VALUE"
                           <> help "Additional information for the renderer."
                           )
-            <*> intOption (  long "width"
+            <*> optional (intOption
+                          $  long "width"
                           <> short 'w'
                           <> metavar "WIDTH"
                           <> help "Maximum prompt width - controls truncation"
@@ -60,8 +61,8 @@ argParser = CommandArgs
                           <> metavar "INT"
                           <> help "Number of jobs."
                           )
-            <*> optional (strOption $
-                             long "debug"
+            <*> optional (strOption
+                          $  long "debug"
                           <> short 'd'
                           <> metavar "SEGMENT"
                           <> help "Display only the specified segment. Used for debugging. Must be a fully qualified name. e.g powerline.segments.shell.cwd"
