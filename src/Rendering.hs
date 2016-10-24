@@ -88,7 +88,8 @@ renderSegments rInfo@RenderInfo{..} s segments = res where
     insertDivs = intersperseBy makeDiv
 
     -- Special case to add dividers to the ends.
-    addEndDiv xs = let bg = Segment (HighlightGroup "background" Nothing) ""
+    -- Note that we use NoHighlight here, since no format codes should be used after the (visual) end of the prompt.
+    addEndDiv xs = let bg = Segment NoHighlight ""
                    in case s of
                            SLeft  -> xs ++ [makeDiv (last xs) bg]
                            SRight -> makeDiv bg (head xs) : xs
@@ -141,6 +142,7 @@ applyWeight gw (CS.TrueGradient xs ys) = CS.TrueColour (pick gw xs) (pick gw ys)
 
 lookupStyle :: RenderInfo -> HighlightGroup -> Maybe CS.TerminalColour
 lookupStyle RenderInfo{..} (HighlightGroup k _) = Map.lookup k colourScheme
+lookupStyle _ NoHighlight = Just CS.DefaultTerminalColour
 
 unsafeLookupStyle :: RenderInfo -> HighlightGroup -> CS.TerminalColour
 unsafeLookupStyle RenderInfo{..} (HighlightGroup k _) = res where
@@ -163,6 +165,7 @@ styleTuple rInfo CS.TerminalColour{..} = (f fg defaultFg, f bg defaultBg) where
     lookupCol name = Map.lookup name colDict
     colDict = CS.colourDict $ colourConfig rInfo
     CS.TerminalColour defaultFg defaultBg _ = unsafeLookupStyle rInfo $ HighlightGroup "background" Nothing
+styleTuple _ CS.DefaultTerminalColour = (mempty, mempty)
 
 -- Appends the first list to the specified side of the second.
 appendSide :: Side -> [a] -> [a] -> [a]

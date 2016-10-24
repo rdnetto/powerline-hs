@@ -116,13 +116,20 @@ instance FromJSON TerminalColourEntry where
     parseJSON (String s)   = return . TerminalColourRef $ unpack s
     parseJSON invalid      = typeMismatch "TerminalColourEntry" invalid
 
--- Despite the name, fg and bg can refer to either simple colours or gradients
+-- Despite the name, fg and bg can refer to either simple colours or gradients.
+-- DefaultTerminalColour indicates that no highlighting should be performed, and is used for the final divider.
 data TerminalColour = TerminalColour {
     fg :: String,
     bg :: String,
     attrs :: [String]
-} deriving (Generic, Show, Eq)
-instance FromJSON TerminalColour
+    } | DefaultTerminalColour
+    deriving (Generic, Show, Eq)
+
+instance FromJSON TerminalColour where
+    parseJSON (Object obj) = TerminalColour <$> obj .: "fg"
+                                            <*> obj .: "bg"
+                                            <*> obj .: "attrs"
+    parseJSON invalid      = typeMismatch "TerminalColour" invalid
 
 -- TODO: this can result in an infinite loop
 derefColourScheme :: Map String TerminalColourEntry -> Map String TerminalColour

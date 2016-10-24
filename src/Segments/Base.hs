@@ -48,7 +48,8 @@ type GradientWeight = Float
 data HighlightGroup = HighlightGroup {
                         hlGroup :: String,                  -- highlight group to use - may be colour or gradient
                         hlValue :: Maybe GradientWeight     -- gradient value, if defined. Value spans 0 (least alert) to 1 (most alert)
-                    } deriving (Show, Eq)
+                    } | NoHighlight
+                    deriving (Show, Eq)
 
 modifySegText :: (String -> String) -> Segment -> Segment
 modifySegText f s = s { segmentText = f (segmentText s) }
