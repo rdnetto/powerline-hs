@@ -18,7 +18,7 @@ import Safe (fromJustNote)
 import Aeson_Unpack
 
 -- type alias for entries we don't care about
-type DontCare = Object
+type DontCare = Value
 
 -- config.json
 
