@@ -33,6 +33,8 @@ segmentHandlers = Map.fromList [
         ("powerline.segments.common.time.date",             Segments.Common.Time.timeDateSegment),
         ("powerline.segments.common.vcs.branch",            Segments.VCS.branchSegment),
         ("powerline.segments.common.vcs.stash",             Segments.VCS.stashCountSegment),
+        ("powerline.segments.shell.continuation",           Segments.Shell.continuationSegment),
+        ("continuation",                                    Segments.Shell.continuationSegment),    -- Needed because the default file uses an unqualified name
         ("powerline.segments.shell.cwd",                    Segments.Shell.cwdSegment),
         ("powerline.segments.shell.jobnum",                 Segments.Shell.jobNumSegment),
         ("powerline.segments.shell.last_pipe_status",       Segments.Shell.pipeStatusSegment),

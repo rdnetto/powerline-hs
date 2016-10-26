@@ -99,6 +99,12 @@ modeSegment args ctx = do
         m <- ignoreMode =<< mode
         return . Segment hlGroup $ overrideMode m
 
+-- powerline.segments.shell.continuation
+-- The original implementation displays parser state, but we never receive this info as zpython is not enabled.
+continuationSegment :: SegmentHandler
+continuationSegment = simpleHandler "continuation" $ return2 ""
+
+
 -- Truncate parent components to this length
 maxParentLen :: SegmentArgs -> Maybe Int
 maxParentLen args = unpackValue <$> Map.lookup "dir_shorten_len" args

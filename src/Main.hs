@@ -54,10 +54,11 @@ main = parseArgs >>= \args -> do
                           _      -> theme extConfig
 
     -- Color scheme
-    let csNames = do
+    csNames <- filterM doesFileExist $ do
+            n <- ["__main__", colorscheme extConfig]
             d <- ["colorschemes", "colorschemes/shell"]
             base <- cfgDirs
-            return $ base </> d </> colorscheme extConfig ++ ".json"
+            return $ base </> d </> n ++ ".json"
 
     rootCS <- loadLayeredConfigFiles csNames :: IO ColourSchemeConfig
 
@@ -74,7 +75,7 @@ main = parseArgs >>= \args -> do
     -- see https://powerline.readthedocs.io/en/master/configuration/reference.html#extension-specific-configuration
     let default_top_theme = defaultTopTheme $ common config
 
-    let themePaths = do
+    themePaths <- filterM doesFileExist $ do
             cfg <- cfgDirs
             theme <- [
                     default_top_theme ++ ".json",
@@ -83,8 +84,7 @@ main = parseArgs >>= \args -> do
                 ]
             return $ cfg </> "themes" </> theme
 
-    themesThatExist <- filterM doesFileExist themePaths
-    themeCfg <- loadLayeredConfigFiles themesThatExist :: IO ThemeConfig
+    themeCfg <- loadLayeredConfigFiles themePaths :: IO ThemeConfig
 
     -- Needed for rendering
     let numSpaces = fromMaybe 1 $ spaces themeCfg
