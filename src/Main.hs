@@ -10,7 +10,7 @@ import qualified Data.Map.Lazy as Map
 import Data.Map.Lazy.Merge
 import Data.Maybe (catMaybes, fromMaybe, maybeToList)
 import Rainbow (byteStringMakerFromEnvironment)
-import Safe (headMay, fromJustNote, tailNote, tailMay)
+import Safe
 import System.Directory (doesFileExist)
 import System.Environment.XDG.BaseDir (getUserConfigDir)
 import System.FilePath ((</>), takeExtension)
@@ -48,10 +48,10 @@ main = parseArgs >>= \args -> do
 
     -- Local themes are used for select, continuation modes (PS3, PS4)
     let extConfig = shell . ext $ config
-    let localTheme = fromJustNote "Could not find --renderer-arg=local_theme=???" . Map.lookup "local_theme" $ rendererArgs args
-    let shellTheme = case renderSide args of
-                          RSLeft -> Map.findWithDefault localTheme localTheme (localThemes extConfig)
-                          _      -> theme extConfig
+    let localTheme = Map.lookup "local_theme" $ rendererArgs args
+    let shellTheme = case localTheme of
+                          Just lt -> Map.findWithDefault lt lt (localThemes extConfig)
+                          Nothing -> theme extConfig
 
     -- Color scheme
     csNames <- filterM doesFileExist $ do

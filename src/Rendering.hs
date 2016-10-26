@@ -44,6 +44,7 @@ renderSegment _ Divider{..} = res where
 
 -- Renders a prompt of segments, including the required spaces and padding
 renderSegments :: RenderInfo -> Side -> [Segment] -> [Chunk String]
+renderSegments _ _ [] = []  -- making this explicit simplifies the logic for adding dividers below
 renderSegments rInfo@RenderInfo{..} s segments = res where
     -- NOTE: the equivalent logic is in powerline/renderer.py:540
     makeDiv x y = div where
@@ -134,6 +135,7 @@ formatChunk CS.ColourConfig{..} gradWeight CS.TerminalColour{..} = fg' . bg' . a
     fg' = fore . toRadiant $ lookupCol fg
     bg' = back . toRadiant $ lookupCol bg
     attrs' = foldl (.) id $ toChunkFormatter <$> attrs
+formatChunk _ _ CS.DefaultTerminalColour = id
 
 -- Resolves a gradient weight and a gradient to a colour
 applyWeight :: GradientWeight -> CS.ColourGradient -> CS.Colour
@@ -149,6 +151,7 @@ unsafeLookupStyle RenderInfo{..} (HighlightGroup k _) = res where
     res = case Map.lookup k colourScheme of
                Just x  -> x
                Nothing -> error $ "Could not find style with name " ++ k
+unsafeLookupStyle _ NoHighlight = CS.DefaultTerminalColour
 
 lookupStyleWithFallback :: RenderInfo -> HighlightGroup -> HighlightGroup -> CS.TerminalColour
 lookupStyleWithFallback rInfo s fb = res where
