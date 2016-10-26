@@ -6,10 +6,10 @@ module Aeson_Unpack where
 import Data.Aeson (Value(..))
 import qualified Data.HashMap.Strict as HMS
 import qualified Data.Map.Strict as MapS
-import Data.Maybe (fromJust)
 import Data.Scientific (isInteger, toBoundedInteger, toRealFloat)
 import Data.Text (unpack)
 import qualified Data.Vector as Vector
+import Safe
 
 import Util
 
@@ -22,7 +22,7 @@ instance ValueType Bool where
     unpackValue x = error $ show x ++ " is not a Bool"
 
 instance ValueType Int where
-    unpackValue (Number x) | isInteger x = fromJust $ toBoundedInteger x
+    unpackValue (Number x) | isInteger x = fromJustNote ("Invalid integer: " ++ show x) $ toBoundedInteger x
     unpackValue x = error $ show x ++ " is not an integer"
 
 instance ValueType Float where

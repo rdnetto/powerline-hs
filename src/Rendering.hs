@@ -4,7 +4,7 @@ module Rendering(putChunks, renderSegments, RenderInfo(RenderInfo)) where
 
 import qualified Data.ByteString as BS
 import qualified Data.Map.Lazy as Map
-import Data.Maybe (fromJust, catMaybes)
+import Data.Maybe (catMaybes)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import Prelude hiding (lookup, div)
@@ -36,7 +36,7 @@ renderSegment rinfo@RenderInfo{..} Segment{..} = res where
 
     fmt = if   hGroup == ""
           then id
-          else formatChunk colourConfig gradientWeight . fromJust $ lookupStyle rinfo segmentGroup
+          else formatChunk colourConfig gradientWeight . fromJustNote ("Could not find style with name: " ++ hlGroup segmentGroup) $ lookupStyle rinfo segmentGroup
 
     res = fmt . chunk $ segmentText
 renderSegment _ Divider{..} = res where

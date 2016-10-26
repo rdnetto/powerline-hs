@@ -8,7 +8,7 @@ import Data.Function ((&))
 import Data.List (foldl1', intercalate)
 import qualified Data.Map.Lazy as Map
 import Data.Map.Lazy.Merge
-import Data.Maybe (catMaybes, fromJust, fromMaybe, maybeToList)
+import Data.Maybe (catMaybes, fromMaybe, maybeToList)
 import Rainbow (byteStringMakerFromEnvironment)
 import Safe (headMay, fromJustNote, tailNote, tailMay)
 import System.Directory (doesFileExist)
@@ -88,7 +88,7 @@ main = parseArgs >>= \args -> do
 
     -- Needed for rendering
     let numSpaces = fromMaybe 1 $ spaces themeCfg
-    let divCfg = themeCfg & dividers & fromJust
+    let divCfg = themeCfg & dividers & fromJustNote "Could not find dividers info"
     let renderInfo = RenderInfo colours cs divCfg numSpaces
     putChunks' <- putChunks (rendererModule args) <$> byteStringMakerFromEnvironment
 
