@@ -113,8 +113,9 @@ main = parseArgs >>= \args -> do
 
 
 -- Returns the config_files directory that is part of the powerline package installation.
+-- We take the last element rather than the first to default to the latest version of Python.
 getSysConfigDir :: IO (Maybe String)
-getSysConfigDir = headMay <$> pySiteDirs "powerline"
+getSysConfigDir = lastMay <$> pySiteDirs "powerline"
 
 -- Loads a config file, throwing an exception if there was an error message
 loadConfigFile :: FromJSON a => FilePath -> IO a
