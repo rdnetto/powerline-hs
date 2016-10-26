@@ -26,8 +26,11 @@ data RendererModule = RMRaw | RMZsh | RMBash
 
 type RendererArgs = Map.Map String String
 
-data RenderSide = RSLeft | RSRight | RSAbove | RSAboveLeft
-    deriving (Eq, Show)
+data RenderSide = RSLeft        -- Continuation (PS2, PS3)
+                | RSRight       -- Right prompt (RPS1)
+                | RSAboveLeft   -- Left prompt (PS1)
+                | RSAbove       -- Unknown
+                deriving (Eq, Show)
 
 
 argParser :: Parser CommandArgs

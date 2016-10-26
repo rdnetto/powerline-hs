@@ -40,9 +40,15 @@ instance FromJSON ExtConfigs
 
 data ExtConfig = ExtConfig {
     colorscheme :: String,
-    theme       :: String
+    theme       :: String,
+    localThemes :: Map String String    -- specifies the theme to use for a specific context
 } deriving (Generic, Show)
-instance FromJSON ExtConfig
+
+instance FromJSON ExtConfig where
+    parseJSON (Object obj) = ExtConfig <$> obj .:  "colorscheme"
+                                       <*> obj .:  "theme"
+                                       <*> obj .:? "local_themes" .!= MapL.empty
+    parseJSON invalid = typeMismatch "ExtConfig" invalid
 
 defaultTopTheme :: CommonConfig -> String
 defaultTopTheme cfg = fromMaybe def val where

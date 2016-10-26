@@ -10,7 +10,7 @@ import qualified Data.Map.Lazy as Map
 import Data.Map.Lazy.Merge
 import Data.Maybe (catMaybes, fromJust, fromMaybe, maybeToList)
 import Rainbow (byteStringMakerFromEnvironment)
-import Safe (headMay)
+import Safe (headMay, fromJustNote, tailNote, tailMay)
 import System.Directory (doesFileExist)
 import System.Environment.XDG.BaseDir (getUserConfigDir)
 import System.FilePath ((</>), takeExtension)
@@ -46,13 +46,18 @@ main = parseArgs >>= \args -> do
     config  <- loadConfigFile' "config.json" :: IO MainConfig
     colours <- loadConfigFile' "colors.json" :: IO ColourConfig
 
-    let ExtConfig shellCS shellTheme = shell . ext $ config
+    -- Local themes are used for select, continuation modes (PS3, PS4)
+    let extConfig = shell . ext $ config
+    let localTheme = fromJustNote "Could not find --renderer-arg=local_theme=???" . Map.lookup "local_theme" $ rendererArgs args
+    let shellTheme = case renderSide args of
+                          RSLeft -> Map.findWithDefault localTheme localTheme (localThemes extConfig)
+                          _      -> theme extConfig
 
     -- Color scheme
     let csNames = do
             d <- ["colorschemes", "colorschemes/shell"]
             base <- cfgDirs
-            return $ base </> d </> shellCS ++ ".json"
+            return $ base </> d </> colorscheme extConfig ++ ".json"
 
     rootCS <- loadLayeredConfigFiles csNames :: IO ColourSchemeConfig
 
@@ -66,7 +71,9 @@ main = parseArgs >>= \args -> do
     let cs = rightBiasedMerge (groups rootCS) modeCS
 
     -- Themes - more complicated because we need to merge before parsing
+    -- see https://powerline.readthedocs.io/en/master/configuration/reference.html#extension-specific-configuration
     let default_top_theme = defaultTopTheme $ common config
+
     let themePaths = do
             cfg <- cfgDirs
             theme <- [
@@ -93,18 +100,16 @@ main = parseArgs >>= \args -> do
 
         Nothing -> do
             -- Need to segments over segment_data
-            let fmap2 f = fmap (fmap f)
-            let segments' = layerSegments (segment_data themeCfg) `fmap2` segments themeCfg
+            -- This seems to be specified by config_files/config.json, in the local themes section. Note that we already parse this file for other info
+            let segments' = layerSegments (segment_data themeCfg) `map2` segments themeCfg
 
-            -- Generate prompt
-            when (renderSide args `elem` [RSLeft, RSAboveLeft]) $ do
-                left_prompt  <- generateSegment args `mapM` left  segments'
-                putChunks' . renderSegments renderInfo SLeft $ concat left_prompt
+            let (side, segs) = case renderSide args of
+                                    RSLeft      -> (SLeft,  left  segments')
+                                    RSAboveLeft -> (SLeft,  left  segments')
+                                    RSRight     -> (SRight, right segments')
 
-            when (renderSide args == RSRight) $ do
-                right_prompt <- generateSegment args `mapM` right segments'
-                putChunks' . renderSegments renderInfo SRight $ concat right_prompt
-
+            prompt <- generateSegment args `mapM` segs
+            putChunks' . renderSegments renderInfo side $ concat prompt
 
 
 -- Returns the config_files directory that is part of the powerline package installation.
@@ -132,11 +137,11 @@ layerSegments segmentData s = Segment (function s) before' after' args' where
     -- segments can be referred to by either their fully qualified name, or its last component
     -- for e.g. powerline.segments.common.net.hostname, it's 'hostname'
     key = function s
-    abbreviatedKey = tail $ takeExtension key
+    abbreviatedKey = tailMay $ takeExtension key    -- takeExtension returns ".hostname" or "" if no extension found
 
     sd = headMay $ catMaybes [
             Map.lookup key segmentData,
-            Map.lookup abbreviatedKey segmentData
+            join $ Map.lookup <$> abbreviatedKey <*> pure segmentData
         ]
     before' = before s `orElse` (sdBefore =<< sd)
     after'  = after s  `orElse` (sdAfter =<< sd)
