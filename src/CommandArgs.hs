@@ -45,22 +45,23 @@ argParser = CommandArgs
                           <> metavar "ARG=VALUE"
                           <> help "Additional information for the renderer."
                           )
-            <*> optional (intOption
+            <*> optional (option auto
                           $  long "width"
                           <> short 'w'
                           <> metavar "WIDTH"
                           <> help "Maximum prompt width - controls truncation"
                           )
-            <*> intOption (  long "last-exit-code"
+            <*> defOption 0 auto
+                          (  long "last-exit-code"
                           <> metavar "INT"
                           <> help "Last exit code."
                           )
-            <*> option splintReader
+            <*> defOption [] splintReader
                           (  long "last-pipe-status"
                           <> metavar "LIST"
                           <> help "Space-seperated array of exit codes, corresponding to the commands in one pipe."
                           )
-            <*> intOption (  long "jobnum"
+            <*> defOption 0 auto (  long "jobnum"
                           <> metavar "INT"
                           <> help "Number of jobs."
                           )
@@ -85,12 +86,9 @@ parseArgs = execParser opts where
 defOption :: a -> ReadM a -> Mod OptionFields a -> Parser a
 defOption def p m = option p m <|> pure def
 
-intOption :: Mod OptionFields Int -> Parser Int
-intOption = option auto
-
 -- Parser for a key-value pair option that may be specified multiple times
 rendererArgsOption :: Mod OptionFields (String, String) -> Parser RendererArgs
-rendererArgsOption desc = Map.fromList . concat <$> some single where
+rendererArgsOption desc = Map.fromList . concat <$> many single where
     single = return <$> option keyValuePairReader desc
 
 -- Parses a 'key=value' pair
