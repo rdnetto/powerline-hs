@@ -1,9 +1,10 @@
 module Segments.Shell where
 
 import Data.Aeson (Value(..))
+import Data.List (isPrefixOf)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (catMaybes, fromMaybe, maybeToList)
-import System.Directory (getCurrentDirectory)
+import System.Directory (getCurrentDirectory, getHomeDirectory)
 import System.FilePath (joinPath, splitPath, dropTrailingPathSeparator)
 
 import Aeson_Unpack
@@ -37,9 +38,15 @@ statusSegment x = Segment (HighlightGroup "exit_fail" Nothing) (show x)
 cwdSegment :: SegmentHandler
 cwdSegment args ctx = do
     let argPath = Map.lookup "shortened_path" $ rendererArgs ctx
-    -- Path is normally provided via rendererArgs, but fallback to syscall if its not
+    -- Path is normally provided via rendererArgs, but fallback to syscall if its not (e.g. for bash)
     cwd <- maybe getCurrentDirectory return argPath
-    let pathComponents = dropTrailingPathSeparator <$> splitPath cwd
+
+    -- Abbreviate paths within home directory
+    home <- getHomeDirectory
+    let abbrevHome s | home `isPrefixOf` s = '~' : drop (length home) s
+                     | otherwise           = s
+
+    let getComponents x = dropTrailingPathSeparator <$> splitPath x
 
     -- Truncate parent components (iff set)
     let truncateComponent = case maxParentLen args of
@@ -55,13 +62,13 @@ cwdSegment args ctx = do
                                 Nothing -> id
 
     -- If combineSegs, use a single segment instead of multiple
-    let pathComponents' = applyDepthLimit $ truncateParentComponents pathComponents
+    let pathComponents = applyDepthLimit . truncateParentComponents . getComponents . abbrevHome $ cwd
 
     let hlGroup = HighlightGroup "cwd" Nothing
     return $ Segment hlGroup <$> (
             if   combineSegs args
-            then return $ joinPath pathComponents'
-            else pathComponents'
+            then return $ joinPath pathComponents
+            else pathComponents
         )
 
 -- powerline.segments.shell.jobnum
