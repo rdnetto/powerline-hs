@@ -1,6 +1,7 @@
 -- TODO: split this file up - too much config logic in here
 module Main where
 
+import Control.Exception (SomeException, handle)
 import Control.Monad
 import Data.Aeson
 import qualified Data.ByteString.Lazy as BSL
@@ -9,10 +10,12 @@ import Data.List (foldl1', intercalate)
 import qualified Data.Map.Lazy as Map
 import Data.Map.Lazy.Merge
 import Data.Maybe (catMaybes, fromMaybe, maybeToList)
+import Data.Time.LocalTime (getZonedTime)
 import Rainbow (byteStringMakerFromEnvironment)
 import Safe
-import System.Directory (doesFileExist)
+import System.Directory (doesFileExist, getHomeDirectory)
 import System.Environment.XDG.BaseDir (getUserConfigDir)
+import System.Exit (exitFailure)
 import System.FilePath ((</>), takeExtension)
 
 import Aeson_Merge
@@ -37,7 +40,7 @@ import Util
 
 
 main :: IO ()
-main = parseArgs >>= \args -> do
+main = handle logErrors $ parseArgs >>= \args -> do
     cfgDir     <- getUserConfigDir "powerline"
     rootCfgDir <- map2 (</> "config_files") getSysConfigDir
     let cfgDirs = maybeToList rootCfgDir ++ [cfgDir]
@@ -156,4 +159,15 @@ layerSegments segmentData s = Segment (function s) before' after' args' where
 fromRight :: Either String b -> b
 fromRight (Left a)  = error a
 fromRight (Right b) = b
+
+-- Catches an exception and logs it before terminating
+logErrors :: SomeException -> IO ()
+logErrors e = do
+    now <- getZonedTime
+    home <- getHomeDirectory
+    let txt = show now ++ " " ++  show e ++ "\n\n"
+
+    print e
+    appendFile (home </> "powerline-hs.log") txt
+    exitFailure
 
