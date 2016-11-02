@@ -1,5 +1,5 @@
 name:                powerline-hs
-version:             0.1.0.0
+version:             0.1.0.1
 synopsis:            Powerline-compatible shell prompt generator.
 description:         Please see README.md
 homepage:            https://github.com/rdnetto/powerline-hs
