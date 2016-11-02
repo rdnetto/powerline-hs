@@ -62,3 +62,19 @@ executable powerline-hs
                        vector,
                        xdg-basedir
 
+benchmark powerline-hs-bench
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      bench
+  main-is:             Bench.hs
+  build-depends:       base >= 4.7 && < 5,
+                       criterion,
+                       MissingH,
+                       process
+  default-language:    Haskell2010
+  ghc-options:         -O2 -Wall
+
+
+source-repository head
+  type:     git
+  location: https://github.com/rdnetto/powerline-hs
+

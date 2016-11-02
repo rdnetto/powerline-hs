@@ -20,3 +20,4 @@ cabal.project.local
 .HTF/
 
 powerline-hs
+powerline-hs-bench
