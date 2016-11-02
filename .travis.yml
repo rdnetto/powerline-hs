@@ -129,7 +129,10 @@ script:
   set +ex
 
 before_deploy:
-  - tar -C $(dirname $(stack exec which powerline-hs) -acf powerline-hs-$OS-$VERSION.tar.xz powerline-hs
+  - export TARGET=$(pwd)
+  - cd $(dirname $(stack exec which powerline-hs))
+  - tar -cJf "$TARGET/powerline-hs-$OS-$VERSION.tar.xz" powerline-hs
+  - cd -
   - echo "Publishing release to Github..."
 deploy:
   provider: releases
