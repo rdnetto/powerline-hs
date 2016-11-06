@@ -6,7 +6,7 @@ import qualified Data.Map.Strict as Map
 import Options.Applicative
 import Options.Applicative.Types
 import Safe (lastMay)
-import Text.ParserCombinators.ReadP (char, munch1, sepBy1, readP_to_S)
+import Text.ParserCombinators.ReadP (char, munch, munch1, sepBy1, readP_to_S)
 
 
 data CommandArgs = CommandArgs {
@@ -91,15 +91,19 @@ rendererArgsOption :: Mod OptionFields (String, String) -> Parser RendererArgs
 rendererArgsOption desc = Map.fromList . concat <$> many single where
     single = return <$> option keyValuePairReader desc
 
--- Parses a 'key=value' pair
+-- Parses a 'key=value' pair. Note that value (but not key) can be an empty String.
 keyValuePairReader :: ReadM (String, String)
 keyValuePairReader = do
     arg <- readerAsk
-    let parser = sepBy1 (munch1 $ (/=) '=') (char '=')
+    let k = munch1 $ (/=) '='
+    let v = munch  $ const True
+    let parser = (,) <$> k
+                     <*  char '='
+                     <*> v
 
     case lastMay $ readP_to_S parser arg of
-        Just ([k, v], "") -> return (k, v)
-        _                 -> fail $ '\'' : arg ++ "' does not have format 'key=value'."
+        Just (kv, "") -> return kv
+        _             -> fail $ '\'' : arg ++ "' does not have format 'key=value'."
 
 -- Space-seperated list of ints
 -- Based on http://therning.org/magnus/posts/2014-10-13-000-optparse-applicative.html
