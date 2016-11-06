@@ -35,9 +35,6 @@ resolver: lts-7.1
 # will not be run. This is useful for tweaking upstream packages.
 packages:
 - '.'
-- location:
-    git: https://github.com/rdnetto/glob-posix.git
-    commit: master
 
 # Dependency packages to be pulled from upstream that are not in the resolver
 extra-deps:
@@ -45,6 +42,8 @@ extra-deps:
 - containers-0.5.8.1
 # Need latest version of Download to fix GHC 8 / OSX incompatibility
 - download-0.3.2.5
+# Not in LTS yet
+- glob-posix-0.1.0.1
 
 # Override default flag values for local packages and extra-deps
 flags: {}
