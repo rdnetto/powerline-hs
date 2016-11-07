@@ -57,7 +57,7 @@ main = handle logErrors $ parseArgs >>= \args -> do
                           Nothing -> theme extConfig
 
     -- Color scheme
-    csNames <- filterM doesFileExist $ do
+    let csNames = do
             n <- ["__main__", colorscheme extConfig]
             d <- ["colorschemes", "colorschemes/shell"]
             base <- cfgDirs
@@ -78,7 +78,7 @@ main = handle logErrors $ parseArgs >>= \args -> do
     -- see https://powerline.readthedocs.io/en/master/configuration/reference.html#extension-specific-configuration
     let default_top_theme = defaultTopTheme $ common config
 
-    themePaths <- filterM doesFileExist $ do
+    let themePaths = do
             cfg <- cfgDirs
             theme <- [
                     default_top_theme ++ ".json",
@@ -129,11 +129,14 @@ loadConfigFile path = do
 -- Loads multiple config files, merges them, then parses them. Merge is right-biased; last file in the list has precedence.
 loadLayeredConfigFiles :: FromJSON a => [FilePath] -> IO a
 loadLayeredConfigFiles paths = do
-    objs <- mapM loadConfigFile paths :: IO [Value]
+    paths' <- filterM doesFileExist paths
+    when (null paths') $ error ("No existing file found in: " ++ show paths)
+
+    objs <- mapM loadConfigFile paths' :: IO [Value]
     let res = foldl1' mergeJson objs
 
     -- Convert to target type
-    return . fromRight . mapLeft (++ " when parsing\n" ++ intercalate "\n" paths) . eitherDecode $ encode res
+    return . fromRight . mapLeft (++ " when parsing\n" ++ intercalate "\n" paths') . eitherDecode $ encode res
 
 -- Layer a segment over the corresponding segment data
 layerSegments :: Map.Map String SegmentData -> Segment -> Segment
