@@ -2,7 +2,7 @@ module Segments.Common.Env where
 
 import Data.Maybe (maybeToList)
 import System.Environment (lookupEnv)
-import System.Posix.User (getLoginName, getEffectiveUserID)
+import System.Posix.User (getEffectiveUserName, getEffectiveUserID)
 
 import Segments.Base
 
@@ -21,7 +21,7 @@ userSegment args _ = do
     let hideUser = argLookup args "hide_user" ""
     let hideDomain = argLookup args "hide_domain" False
 
-    user <- getLoginName
+    user <- getEffectiveUserName
     isRoot <- (== 0) <$> getEffectiveUserID
 
     let hlGroup = flip HighlightGroup Nothing $
