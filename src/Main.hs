@@ -1,7 +1,7 @@
 -- TODO: split this file up - too much config logic in here
 module Main where
 
-import Control.Exception (SomeException, handle)
+import Control.Exception (Handler(..), SomeException, catches)
 import Control.Monad
 import Data.Aeson
 import qualified Data.ByteString.Lazy as BSL
@@ -15,7 +15,7 @@ import Rainbow (byteStringMakerFromEnvironment)
 import Safe
 import System.Directory (doesFileExist, getHomeDirectory)
 import System.Environment.XDG.BaseDir (getUserConfigDir)
-import System.Exit (exitFailure)
+import System.Exit (exitFailure, ExitCode)
 import System.FilePath ((</>), takeExtension)
 
 import Aeson_Merge
@@ -40,7 +40,7 @@ import Util
 
 
 main :: IO ()
-main = handle logErrors $ parseArgs >>= \args -> do
+main = handleErrors $ parseArgs >>= \args -> do
     cfgDir     <- getUserConfigDir "powerline"
     rootCfgDir <- map2 (</> "config_files") getSysConfigDir
     let cfgDirs = maybeToList rootCfgDir ++ [cfgDir]
@@ -89,7 +89,7 @@ main = handle logErrors $ parseArgs >>= \args -> do
 
     themeCfg <- loadLayeredConfigFiles themePaths :: IO ThemeConfig
 
-    -- Needed for rendering
+    -- Needed for rendering. Test
     let numSpaces = fromMaybe 1 $ spaces themeCfg
     let divCfg = themeCfg & dividers & fromJustNote "Could not find dividers info"
     let renderInfo = RenderInfo colours cs divCfg numSpaces
@@ -163,14 +163,21 @@ fromRight :: Either String b -> b
 fromRight (Left a)  = error a
 fromRight (Right b) = b
 
--- Catches an exception and logs it before terminating
-logErrors :: SomeException -> IO ()
-logErrors e = do
-    now <- getZonedTime
-    home <- getHomeDirectory
-    let txt = show now ++ " " ++  show e ++ "\n\n"
+-- Catches exceptions and logs them before terminating
+handleErrors :: IO () -> IO ()
+handleErrors io = io `catches` [
+        -- Don't log cases where we intentionally terminate. e.g. --help
+        Handler ( \(e :: ExitCode) -> return () ),
+        Handler logErrors
+    ] where
 
-    print e
-    appendFile (home </> "powerline-hs.log") txt
-    exitFailure
+    logErrors :: SomeException -> IO ()
+    logErrors e = do
+        now <- getZonedTime
+        home <- getHomeDirectory
+        let txt = show now ++ " " ++  show e ++ "\n\n"
+
+        print e
+        appendFile (home </> "powerline-hs.log") txt
+        exitFailure
 
