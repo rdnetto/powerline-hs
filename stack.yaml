@@ -42,8 +42,9 @@ extra-deps:
 - containers-0.5.8.1
 # Need latest version of Download to fix GHC 8 / OSX incompatibility
 - download-0.3.2.5
-# Not in LTS yet
+# Not in LTS
 - glob-posix-0.1.0.1
+- git-embed-0.1.0
 
 # Override default flag values for local packages and extra-deps
 flags: {}

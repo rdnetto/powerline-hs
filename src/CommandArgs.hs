@@ -1,8 +1,10 @@
+{-# LANGUAGE TemplateHaskell #-}
 
 module CommandArgs where
 
 import Data.Char (isDigit, isSpace)
 import qualified Data.Map.Strict as Map
+import Git.Embed (embedGitDescribe)
 import Options.Applicative
 import Options.Applicative.Types
 import Safe (lastMay)
@@ -77,7 +79,7 @@ argParser = CommandArgs
 
 parseArgs :: IO CommandArgs
 parseArgs = execParser opts where
-    opts = info (helper <*> argParser)
+    opts = info (helper <*> versionFlag <*> argParser)
                 (fullDesc
                 <> progDesc "Powerline clone - generates shell prompts and statuslines."
                 )
@@ -140,4 +142,10 @@ rmReader = do
                   ".zsh"  -> RMZsh
                   ".bash" -> RMBash
                   unknown -> error $ "Unknown renderer module: " ++ unknown
+
+-- Implements --version using Template Haskell. Based on source for 'helper' function in optparse-applicative.
+versionFlag :: Parser (a -> a)
+versionFlag = abortOption (InfoMsg v) flagInfo where
+    flagInfo =  long "version" <> short 'v'
+    v = "Powerline-hs " ++ $(embedGitDescribe ["--tags", "--dirty"])
 

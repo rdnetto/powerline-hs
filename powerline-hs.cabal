@@ -46,6 +46,7 @@ executable powerline-hs
                        directory,
                        download,
                        filepath,
+                       git-embed,
                        glob-posix,
                        network,
                        network-info,
