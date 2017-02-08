@@ -167,7 +167,7 @@ fromRight (Right b) = b
 handleErrors :: IO () -> IO ()
 handleErrors io = io `catches` [
         -- Don't log cases where we intentionally terminate. e.g. --help
-        Handler ( \(e :: ExitCode) -> return () ),
+        Handler ( \(_ :: ExitCode) -> return () ),
         Handler logErrors
     ] where
 
