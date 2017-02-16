@@ -3,67 +3,44 @@ module Main where
 
 import Control.Exception (Handler(..), SomeException, catches)
 import Control.Monad
+import Control.Monad.IO.Class (liftIO)
 import Data.Aeson
 import qualified Data.ByteString.Lazy as BSL
 import Data.Function ((&))
 import Data.List (foldl1', intercalate)
 import qualified Data.Map.Lazy as Map
 import Data.Map.Lazy.Merge
-import Data.Maybe (catMaybes, fromMaybe, maybeToList)
+import Data.Maybe (catMaybes, fromMaybe)
 import Data.Time.LocalTime (getZonedTime)
 import Rainbow (byteStringMakerFromEnvironment)
 import Safe
 import System.Directory (doesFileExist, getHomeDirectory)
-import System.Environment.XDG.BaseDir (getUserConfigDir)
 import System.Exit (exitFailure, ExitCode)
 import System.FilePath ((</>), takeExtension)
 
 import Aeson_Merge
 import CommandArgs
+import ConfigPaths
 import ConfigSchema(
     ColourConfig(..),
     ColourSchemeConfig(..),
-    ExtConfig(..),
-    ExtConfigs(..),
     ForBothSides(..),
     MainConfig(..),
     Segment(..),
     SegmentArgs,
     SegmentData(..),
-    ThemeConfig(..),
-    defaultTopTheme,
+    ThemeConfig(..)
     )
-import PythonSite
 import Rendering
 import Segments
 import Util
 
 
 main :: IO ()
-main = handleErrors $ parseArgs >>= \args -> do
-    cfgDir     <- getUserConfigDir "powerline"
-    rootCfgDir <- map2 (</> "config_files") getSysConfigDir
-    let cfgDirs = maybeToList rootCfgDir ++ [cfgDir]
-
-    let loadConfigFile' f = loadLayeredConfigFiles $ (</> f) <$> cfgDirs
-    config  <- loadConfigFile' "config.json" :: IO MainConfig
-    colours <- loadConfigFile' "colors.json" :: IO ColourConfig
-
-    -- Local themes are used for select, continuation modes (PS3, PS4)
-    let extConfig = shell . ext $ config
-    let localTheme = Map.lookup "local_theme" $ rendererArgs args
-    let shellTheme = case localTheme of
-                          Just lt -> Map.findWithDefault lt lt (localThemes extConfig)
-                          Nothing -> theme extConfig
-
-    -- Color scheme
-    let csNames = do
-            n <- ["__main__", colorscheme extConfig]
-            d <- ["colorschemes", "colorschemes/shell"]
-            base <- cfgDirs
-            return $ base </> d </> n ++ ".json"
-
-    rootCS <- loadLayeredConfigFiles csNames :: IO ColourSchemeConfig
+main = handleErrors $ parseArgs >>= \args -> runCfg $ do
+    config  <- loadLayeredConfigFiles mainConfigPaths           :: CfgM MainConfig
+    colours <- loadLayeredConfigFiles colorsPaths               :: CfgM ColourConfig
+    rootCS  <- loadLayeredConfigFiles $ colorschemePaths config :: CfgM ColourSchemeConfig
 
     let modeCS = fromMaybe Map.empty $ do
             -- ZSH allows users to define arbitrary modes, so we can't rely on a translation existing for one
@@ -76,26 +53,15 @@ main = handleErrors $ parseArgs >>= \args -> do
 
     -- Themes - more complicated because we need to merge before parsing
     -- see https://powerline.readthedocs.io/en/master/configuration/reference.html#extension-specific-configuration
-    let default_top_theme = defaultTopTheme $ common config
+    themeCfg <- loadLayeredConfigFiles $ themePaths config $ rendererArgs args :: CfgM ThemeConfig
 
-    let themePaths = do
-            cfg <- cfgDirs
-            theme <- [
-                    default_top_theme ++ ".json",
-                    "shell" </> "__main__.json",
-                    "shell" </> shellTheme ++ ".json"
-                ]
-            return $ cfg </> "themes" </> theme
-
-    themeCfg <- loadLayeredConfigFiles themePaths :: IO ThemeConfig
-
-    -- Needed for rendering. Test
+    -- Needed for rendering.
     let numSpaces = fromMaybe 1 $ spaces themeCfg
     let divCfg = themeCfg & dividers & fromJustNote "Could not find dividers info"
     let renderInfo = RenderInfo colours cs divCfg numSpaces
-    putChunks' <- putChunks (rendererModule args) <$> byteStringMakerFromEnvironment
+    putChunks' <- liftIO $ putChunks (rendererModule args) <$> byteStringMakerFromEnvironment
 
-    case debugSegment args of
+    liftIO $ case debugSegment args of
         Just segName -> do
             segs <- generateSegment args . layerSegments (segment_data themeCfg) $ Segment segName Nothing Nothing Nothing
             putChunks' $ renderSegments renderInfo SLeft segs
@@ -115,11 +81,6 @@ main = handleErrors $ parseArgs >>= \args -> do
             putChunks' . renderSegments renderInfo side $ concat prompt
 
 
--- Returns the config_files directory that is part of the powerline package installation.
--- We take the last element rather than the first to default to the latest version of Python.
-getSysConfigDir :: IO (Maybe String)
-getSysConfigDir = lastMay <$> pySiteDirs "powerline"
-
 -- Loads a config file, throwing an exception if there was an error message
 loadConfigFile :: FromJSON a => FilePath -> IO a
 loadConfigFile path = do
@@ -127,12 +88,13 @@ loadConfigFile path = do
     return $ fromRight . mapLeft (++ "when parsing\n" ++ path) $ eitherDecode raw
 
 -- Loads multiple config files, merges them, then parses them. Merge is right-biased; last file in the list has precedence.
-loadLayeredConfigFiles :: FromJSON a => [FilePath] -> IO a
-loadLayeredConfigFiles paths = do
-    paths' <- filterM doesFileExist paths
+loadLayeredConfigFiles :: FromJSON a => CfgM [FilePath] -> CfgM a
+loadLayeredConfigFiles pathGetter = do
+    paths <- pathGetter
+    paths' <- liftIO $ filterM doesFileExist paths
     when (null paths') $ error ("No existing file found in: " ++ show paths)
 
-    objs <- mapM loadConfigFile paths' :: IO [Value]
+    objs <- liftIO $ mapM loadConfigFile paths' :: CfgM [Value]
     let res = foldl1' mergeJson objs
 
     -- Convert to target type
@@ -157,11 +119,6 @@ layerSegments segmentData s = Segment (function s) before' after' args' where
     leftBiasedMerge :: SegmentArgs -> SegmentArgs -> SegmentArgs
     leftBiasedMerge = merge preserveMissing preserveMissing $ zipWithMatched (\_ -> flip mergeJson)
     maybeMap = fromMaybe Map.empty
-
--- Helper function for extracting result
-fromRight :: Either String b -> b
-fromRight (Left a)  = error a
-fromRight (Right b) = b
 
 -- Catches exceptions and logs them before terminating
 handleErrors :: IO () -> IO ()

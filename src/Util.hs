@@ -129,3 +129,8 @@ boolToInt :: Bool -> Int
 boolToInt True = 1
 boolToInt False = 0
 
+-- Helper function for extracting result
+fromRight :: Either String b -> b
+fromRight (Left a)  = error a
+fromRight (Right b) = b
+
