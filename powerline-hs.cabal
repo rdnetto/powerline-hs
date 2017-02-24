@@ -26,6 +26,7 @@ executable powerline-hs
                        CommandArgs,
                        ConfigSchema,
                        Format,
+                       Pip,
                        PythonSite,
                        Rendering,
                        Segments,

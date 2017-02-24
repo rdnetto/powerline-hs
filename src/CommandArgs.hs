@@ -10,6 +10,7 @@ import Options.Applicative.Types
 import Safe (lastMay)
 import Text.ParserCombinators.ReadP (char, munch, munch1, sepBy1, readP_to_S)
 
+import Pip
 
 data CommandArgs = CommandArgs {
                     rendererModule :: RendererModule,
@@ -147,5 +148,10 @@ rmReader = do
 versionFlag :: Parser (a -> a)
 versionFlag = abortOption (InfoMsg v) flagInfo where
     flagInfo =  long "version" <> short 'v'
-    v = "Powerline-hs " ++ $(embedGitDescribe ["--tags", "--dirty"])
+    v = concat [
+        "Powerline-hs ",
+        $(embedGitDescribe ["--tags", "--dirty"]),
+        ", compiled with resources from Powerline ",
+        $(embedPipVersion "powerline-status")
+        ]
 
