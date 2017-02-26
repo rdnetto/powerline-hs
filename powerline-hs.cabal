@@ -14,7 +14,7 @@ cabal-version:       >=1.10
 
 executable powerline-hs
   default-language:    Haskell2010
-  ghc-options:         -O2 -Wall
+  ghc-options:         -O2 -Wall -ddump-splices
 
   default-extensions:  RecordWildCards,
                        ScopedTypeVariables
@@ -42,11 +42,13 @@ executable powerline-hs
 
   build-depends:       base >= 4.7 && < 5,
                        aeson,
+                       basic-prelude,
                        bytestring,
                        containers,
                        directory,
                        download,
                        filepath,
+                       file-embed,
                        git-embed,
                        glob-posix,
                        network,
@@ -59,6 +61,8 @@ executable powerline-hs
                        strict,
                        text,
                        time,
+                       template-haskell,
+                       transformers,
                        unordered-containers,
                        unix,
                        vector,

@@ -20,6 +20,7 @@ import System.FilePath ((</>), takeExtension)
 
 import Aeson_Merge
 import CommandArgs
+import ConfigFile
 import ConfigSchema(
     ColourConfig(..),
     ColourSchemeConfig(..),
@@ -45,9 +46,8 @@ main = handleErrors $ parseArgs >>= \args -> do
     rootCfgDir <- map2 (</> "config_files") getSysConfigDir
     let cfgDirs = maybeToList rootCfgDir ++ [cfgDir]
 
-    let loadConfigFile' f = loadLayeredConfigFiles $ (</> f) <$> cfgDirs
-    config  <- loadConfigFile' "config.json" :: IO MainConfig
-    colours <- loadConfigFile' "colors.json" :: IO ColourConfig
+    config  <- readLayeredConfigFiles mainConfigFiles
+    colours <- readLayeredConfigFiles colourConfigFiles
 
     -- Local themes are used for select, continuation modes (PS3, PS4)
     let extConfig = shell . ext $ config
@@ -63,7 +63,7 @@ main = handleErrors $ parseArgs >>= \args -> do
             base <- cfgDirs
             return $ base </> d </> n ++ ".json"
 
-    rootCS <- loadLayeredConfigFiles csNames :: IO ColourSchemeConfig
+    rootCS <- undefined -- loadLayeredConfigFiles $ map UserFile csNames :: IO ColourSchemeConfig
 
     let modeCS = fromMaybe Map.empty $ do
             -- ZSH allows users to define arbitrary modes, so we can't rely on a translation existing for one
@@ -87,7 +87,7 @@ main = handleErrors $ parseArgs >>= \args -> do
                 ]
             return $ cfg </> "themes" </> theme
 
-    themeCfg <- loadLayeredConfigFiles themePaths :: IO ThemeConfig
+    themeCfg <- undefined -- loadLayeredConfigFiles $ map UserFile themePaths :: IO ThemeConfig
 
     -- Needed for rendering. Test
     let numSpaces = fromMaybe 1 $ spaces themeCfg
@@ -120,24 +120,7 @@ main = handleErrors $ parseArgs >>= \args -> do
 getSysConfigDir :: IO (Maybe String)
 getSysConfigDir = lastMay <$> pySiteDirs "powerline"
 
--- Loads a config file, throwing an exception if there was an error message
-loadConfigFile :: FromJSON a => FilePath -> IO a
-loadConfigFile path = do
-    raw <- BSL.readFile path
-    return $ fromRight . mapLeft (++ "when parsing\n" ++ path) $ eitherDecode raw
-
 -- Loads multiple config files, merges them, then parses them. Merge is right-biased; last file in the list has precedence.
-loadLayeredConfigFiles :: FromJSON a => [FilePath] -> IO a
-loadLayeredConfigFiles paths = do
-    paths' <- filterM doesFileExist paths
-    when (null paths') $ error ("No existing file found in: " ++ show paths)
-
-    objs <- mapM loadConfigFile paths' :: IO [Value]
-    let res = foldl1' mergeJson objs
-
-    -- Convert to target type
-    return . fromRight . mapLeft (++ " when parsing\n" ++ intercalate "\n" paths') . eitherDecode $ encode res
-
 -- Layer a segment over the corresponding segment data
 layerSegments :: Map.Map String SegmentData -> Segment -> Segment
 layerSegments segmentData s = Segment (function s) before' after' args' where
@@ -157,11 +140,6 @@ layerSegments segmentData s = Segment (function s) before' after' args' where
     leftBiasedMerge :: SegmentArgs -> SegmentArgs -> SegmentArgs
     leftBiasedMerge = merge preserveMissing preserveMissing $ zipWithMatched (\_ -> flip mergeJson)
     maybeMap = fromMaybe Map.empty
-
--- Helper function for extracting result
-fromRight :: Either String b -> b
-fromRight (Left a)  = error a
-fromRight (Right b) = b
 
 -- Catches exceptions and logs them before terminating
 handleErrors :: IO () -> IO ()
