@@ -2,7 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module ConfigSchema where
+module Config.Schema where
 
 import Data.Aeson
 import Data.Aeson.Types
@@ -15,7 +15,7 @@ import Data.Word (Word8)
 import GHC.Generics (Generic)
 import Safe (fromJustNote)
 
-import Aeson_Unpack
+import Aeson.Unpack
 
 -- type alias for entries we don't care about
 type DontCare = Value

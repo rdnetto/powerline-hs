@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module ConfigFile where
+module Config.File where
 
 import BasicPrelude
 import Data.Aeson (FromJSON, Value, eitherDecode, encode)
@@ -12,10 +12,10 @@ import Safe (fromJustNote)
 import System.Directory (doesFileExist)
 import System.Environment.XDG.BaseDir (getUserConfigFile)
 
-import Aeson_Merge
+import Aeson.Merge
 import CommandArgs (RendererArgs)
-import ConfigEmbed
-import ConfigSchema
+import Config.Embed
+import Config.Schema
 import Util
 
 

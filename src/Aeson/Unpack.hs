@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Aeson_Unpack where
+module Aeson.Unpack where
 
 import Data.Aeson (Value(..))
 import qualified Data.HashMap.Strict as HMS

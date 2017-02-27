@@ -7,7 +7,7 @@ import Data.Maybe (catMaybes, fromMaybe, maybeToList)
 import System.Directory (getCurrentDirectory, getHomeDirectory)
 import System.FilePath (joinPath, splitPath, dropTrailingPathSeparator)
 
-import Aeson_Unpack
+import Aeson.Unpack
 import CommandArgs
 import Segments.Base
 import Util

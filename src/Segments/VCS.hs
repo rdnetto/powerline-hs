@@ -8,7 +8,7 @@ import Data.Aeson.Types (emptyArray)
 import qualified Data.Map as Map
 import Data.Maybe (maybeToList)
 
-import Aeson_Unpack
+import Aeson.Unpack
 import Segments.Base
 import Util (readProcess)
 

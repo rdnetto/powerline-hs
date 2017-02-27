@@ -1,6 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module ConfigPaths (CfgM, runCfg, mainConfigPaths, colorsPaths, colorschemePaths, themePaths) where
+module Config.Paths (CfgM, runCfg, mainConfigPaths, colorsPaths, colorschemePaths, themePaths) where
 
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Reader (MonadReader, ReaderT, runReaderT, asks)
@@ -11,7 +11,7 @@ import System.Environment.XDG.BaseDir (getUserConfigDir)
 import System.FilePath ((</>))
 
 import CommandArgs (RendererArgs)
-import ConfigSchema(
+import Config.Schema(
     MainConfig(..),
     ExtConfigs(shell),
     ExtConfig(..),

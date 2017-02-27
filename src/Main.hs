@@ -13,10 +13,10 @@ import System.Directory (getHomeDirectory)
 import System.Exit (exitFailure, ExitCode)
 import System.FilePath ((</>), takeExtension)
 
-import Aeson_Merge
+import Aeson.Merge
 import CommandArgs
-import ConfigFile
-import ConfigSchema(
+import Config.File
+import Config.Schema(
     ColourSchemeConfig(..),
     ForBothSides(..),
     Segment(..),

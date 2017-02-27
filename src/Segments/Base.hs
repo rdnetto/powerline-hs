@@ -22,7 +22,7 @@ import System.FilePath ((</>))
 import System.Posix.User (getLoginName)
 
 import CommandArgs
-import ConfigSchema (SegmentArgs, argLookup, argLookup')
+import Config.Schema (SegmentArgs, argLookup, argLookup')
 import Util
 
 

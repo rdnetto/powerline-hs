@@ -12,7 +12,7 @@ import Rainbow
 import Safe
 
 import CommandArgs (RendererModule(..))
-import qualified ConfigSchema as CS
+import qualified Config.Schema as CS
 import Segments.Base (GradientWeight, Segment(..), HighlightGroup(..), modifySegText)
 import Util hiding (replace)
 

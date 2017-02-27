@@ -21,12 +21,12 @@ executable powerline-hs
 
   hs-source-dirs:      src
   main-is:             Main.hs
-  other-modules:       Aeson_Merge,
-                       Aeson_Unpack,
+  other-modules:       Aeson.Merge,
+                       Aeson.Unpack,
                        CommandArgs,
-                       ConfigEmbed,
-                       ConfigFile,
-                       ConfigSchema,
+                       Config.Embed,
+                       Config.File,
+                       Config.Schema,
                        Format,
                        Pip,
                        PythonSite,

@@ -5,7 +5,7 @@ import Data.Maybe (fromMaybe)
 import System.Environment (lookupEnv)
 import System.FilePath (takeFileName)
 
-import qualified ConfigSchema as CS
+import qualified Config.Schema as CS
 import Segments.Base
 
 import qualified Segments.Common.Batt

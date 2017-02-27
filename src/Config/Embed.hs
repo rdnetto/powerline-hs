@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
 
-module ConfigEmbed (embedAllFiles) where
+module Config.Embed (embedAllFiles) where
 
 import BasicPrelude
 import Data.FileEmbed (embedDir)

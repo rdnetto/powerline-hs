@@ -1,4 +1,4 @@
-module Aeson_Merge where
+module Aeson.Merge where
 
 import Data.Aeson.Types
 import Data.HashMap.Strict as HMS
