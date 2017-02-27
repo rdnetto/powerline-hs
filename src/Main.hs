@@ -9,7 +9,7 @@ import Data.Maybe (catMaybes, fromMaybe)
 import Data.Time.LocalTime (getZonedTime)
 import Rainbow (byteStringMakerFromEnvironment)
 import Safe
-import System.Directory (getHomeDirectory)
+import System.Directory (getTemporaryDirectory)
 import System.Exit (exitFailure, ExitCode)
 import System.FilePath ((</>), takeExtension)
 
@@ -106,10 +106,10 @@ handleErrors io = io `catches` [
     logErrors :: SomeException -> IO ()
     logErrors e = do
         now <- getZonedTime
-        home <- getHomeDirectory
+        tmp <- getTemporaryDirectory
         let txt = show now ++ " " ++  show e ++ "\n\n"
 
         print e
-        appendFile (home </> "powerline-hs.log") txt
+        appendFile (tmp </> "powerline-hs.log") txt
         exitFailure
 
