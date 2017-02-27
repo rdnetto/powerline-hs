@@ -88,7 +88,8 @@ before_install:
 - PACKAGES=$(stack --install-ghc query locals | grep '^ *path' | sed 's@^ *path:@@')
 
 # Install powerline, since it's a build dependency
-- pip install powerline-status
+# Need to install into user dir, since the global path has restricted permissions
+- pip install --user powerline-status
 
 install:
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
@@ -113,7 +114,7 @@ script:
   case "$BUILD" in
     stack)
       stack --no-terminal $ARGS test --bench --no-run-benchmarks --haddock --no-haddock-deps --no-run-tests
-      pip uninstall powerline-status
+      pip uninstall -y powerline-status
       stack --no-terminal $ARGS test --bench --no-run-benchmarks --haddock --no-haddock-deps
       ;;
     cabal)
