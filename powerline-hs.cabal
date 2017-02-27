@@ -24,6 +24,8 @@ executable powerline-hs
   other-modules:       Aeson_Merge,
                        Aeson_Unpack,
                        CommandArgs,
+                       ConfigEmbed,
+                       ConfigFile,
                        ConfigSchema,
                        Format,
                        Pip,

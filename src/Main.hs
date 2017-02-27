@@ -1,20 +1,15 @@
--- TODO: split this file up - too much config logic in here
 module Main where
 
 import Control.Exception (Handler(..), SomeException, catches)
 import Control.Monad
-import Data.Aeson
-import qualified Data.ByteString.Lazy as BSL
 import Data.Function ((&))
-import Data.List (foldl1', intercalate)
 import qualified Data.Map.Lazy as Map
 import Data.Map.Lazy.Merge
-import Data.Maybe (catMaybes, fromMaybe, maybeToList)
+import Data.Maybe (catMaybes, fromMaybe)
 import Data.Time.LocalTime (getZonedTime)
 import Rainbow (byteStringMakerFromEnvironment)
 import Safe
-import System.Directory (doesFileExist, getHomeDirectory)
-import System.Environment.XDG.BaseDir (getUserConfigDir)
+import System.Directory (getHomeDirectory)
 import System.Exit (exitFailure, ExitCode)
 import System.FilePath ((</>), takeExtension)
 
@@ -22,19 +17,13 @@ import Aeson_Merge
 import CommandArgs
 import ConfigFile
 import ConfigSchema(
-    ColourConfig(..),
     ColourSchemeConfig(..),
-    ExtConfig(..),
-    ExtConfigs(..),
     ForBothSides(..),
-    MainConfig(..),
     Segment(..),
     SegmentArgs,
     SegmentData(..),
-    ThemeConfig(..),
-    defaultTopTheme,
+    ThemeConfig(..)
     )
-import PythonSite
 import Rendering
 import Segments
 import Util
@@ -42,28 +31,13 @@ import Util
 
 main :: IO ()
 main = handleErrors $ parseArgs >>= \args -> do
-    cfgDir     <- getUserConfigDir "powerline"
-    rootCfgDir <- map2 (</> "config_files") getSysConfigDir
-    let cfgDirs = maybeToList rootCfgDir ++ [cfgDir]
+    -- Load config files
+    config   <- readLayeredConfigFiles mainConfigFiles
+    colours  <- readLayeredConfigFiles colourConfigFiles
+    themeCfg <- readLayeredConfigFiles $ themeConfigFiles config (rendererArgs args)
 
-    config  <- readLayeredConfigFiles mainConfigFiles
-    colours <- readLayeredConfigFiles colourConfigFiles
-
-    -- Local themes are used for select, continuation modes (PS3, PS4)
-    let extConfig = shell . ext $ config
-    let localTheme = Map.lookup "local_theme" $ rendererArgs args
-    let shellTheme = case localTheme of
-                          Just lt -> Map.findWithDefault lt lt (localThemes extConfig)
-                          Nothing -> theme extConfig
-
-    -- Color scheme
-    let csNames = do
-            n <- ["__main__", colorscheme extConfig]
-            d <- ["colorschemes", "colorschemes/shell"]
-            base <- cfgDirs
-            return $ base </> d </> n ++ ".json"
-
-    rootCS <- undefined -- loadLayeredConfigFiles $ map UserFile csNames :: IO ColourSchemeConfig
+    -- Colour schemes need special treatment because of modes
+    rootCS <- readLayeredConfigFiles $ colourSchemeConfigFiles config
 
     let modeCS = fromMaybe Map.empty $ do
             -- ZSH allows users to define arbitrary modes, so we can't rely on a translation existing for one
@@ -74,22 +48,7 @@ main = handleErrors $ parseArgs >>= \args -> do
     let rightBiasedMerge = merge preserveMissing preserveMissing $ zipWithMatched (\_ _ r -> r)
     let cs = rightBiasedMerge (groups rootCS) modeCS
 
-    -- Themes - more complicated because we need to merge before parsing
-    -- see https://powerline.readthedocs.io/en/master/configuration/reference.html#extension-specific-configuration
-    let default_top_theme = defaultTopTheme $ common config
-
-    let themePaths = do
-            cfg <- cfgDirs
-            theme <- [
-                    default_top_theme ++ ".json",
-                    "shell" </> "__main__.json",
-                    "shell" </> shellTheme ++ ".json"
-                ]
-            return $ cfg </> "themes" </> theme
-
-    themeCfg <- undefined -- loadLayeredConfigFiles $ map UserFile themePaths :: IO ThemeConfig
-
-    -- Needed for rendering. Test
+    -- Needed for rendering
     let numSpaces = fromMaybe 1 $ spaces themeCfg
     let divCfg = themeCfg & dividers & fromJustNote "Could not find dividers info"
     let renderInfo = RenderInfo colours cs divCfg numSpaces
@@ -114,11 +73,6 @@ main = handleErrors $ parseArgs >>= \args -> do
             prompt <- generateSegment args `mapM` segs
             putChunks' . renderSegments renderInfo side $ concat prompt
 
-
--- Returns the config_files directory that is part of the powerline package installation.
--- We take the last element rather than the first to default to the latest version of Python.
-getSysConfigDir :: IO (Maybe String)
-getSysConfigDir = lastMay <$> pySiteDirs "powerline"
 
 -- Loads multiple config files, merges them, then parses them. Merge is right-biased; last file in the list has precedence.
 -- Layer a segment over the corresponding segment data

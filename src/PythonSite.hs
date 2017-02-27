@@ -1,11 +1,9 @@
-module PythonSite where
+module PythonSite (pySiteDirs) where
 
-import System.Directory (doesFileExist, getHomeDirectory)
+import System.Directory (getHomeDirectory)
 import System.Directory.Glob (glob, globDefaults)
-import System.FilePath ((</>), getSearchPath)
+import System.FilePath ((</>))
 import System.Info (os)
-
-import Util
 
 
 type OS = String
@@ -16,15 +14,6 @@ pySiteDirs pkg = do
     home <- getHomeDirectory
     let dirs = (</> pkg) <$> possibleDirs os home
     concatMapM (glob globDefaults) dirs
-
--- Finds an executable with the given filename
-which :: FilePath -> IO (Maybe FilePath)
-which exe = go =<< getSearchPath where
-    go (p:ps) = ifM (doesFileExist (p </> exe))
-                    (return2 p)
-                    (go ps)
-    go [] = return Nothing
-
 
 {- Returns a list of possible Python site-packages directories, using wildcards for versions.
    This could be in any number of places, but invoking Python to do it the right way would be too expensive (60 ms).
