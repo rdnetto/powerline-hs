@@ -14,7 +14,7 @@ import System.Environment.XDG.BaseDir (getUserConfigFile)
 
 import Aeson.Merge
 import CommandArgs (RendererArgs)
-import Config.Embed
+import Config.PowerlineResources (configFiles)
 import Config.Schema
 import Util
 
@@ -59,10 +59,6 @@ lookupEmbeddedFileX :: FilePath -> ConfigFile a
 lookupEmbeddedFileX fp = fromJustNote m $ lookupEmbeddedFile fp where
     m = "Could not find embedded file: " ++ fp
 
-
--- Map of paths (relative to config_files) to contents.
-configFiles :: Map FilePath ByteString
-configFiles = fromList $(embedAllFiles)
 
 mainConfigFiles :: [ConfigFile MainConfig]
 mainConfigFiles = [lookupEmbeddedFileX "config.json", UserFile "config.json"]

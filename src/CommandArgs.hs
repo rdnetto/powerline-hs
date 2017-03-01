@@ -10,7 +10,8 @@ import Options.Applicative.Types
 import Safe (lastMay)
 import Text.ParserCombinators.ReadP (char, munch, munch1, sepBy1, readP_to_S)
 
-import Pip
+import Config.PowerlineResources (embedPowerlineVersion)
+
 
 data CommandArgs = CommandArgs {
                     rendererModule :: RendererModule,
@@ -152,6 +153,6 @@ versionFlag = abortOption (InfoMsg v) flagInfo where
         "Powerline-hs ",
         $(embedGitDescribe ["--tags", "--dirty"]),
         ", compiled with resources from Powerline ",
-        $(embedPipVersion "powerline-status")
+        $(embedPowerlineVersion)
         ]
 
