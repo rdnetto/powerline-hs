@@ -91,6 +91,10 @@ before_install:
 # Need to install into user dir, since the global path has restricted permissions
 - pip install --user powerline-status
 
+# Temp hack to debug config file loading
+- which powerline || true
+- find / -iname config_files
+
 install:
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
 - if [ -f configure.ac ]; then autoreconf -i; fi
