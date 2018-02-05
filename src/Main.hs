@@ -4,7 +4,7 @@ import Control.Exception (Handler(..), SomeException, catches)
 import Control.Monad
 import Data.Function ((&))
 import qualified Data.Map.Lazy as Map
-import Data.Map.Lazy.Merge
+import Data.Map.Merge.Lazy
 import Data.Maybe (catMaybes, fromMaybe)
 import Data.Time.LocalTime (getZonedTime)
 import Rainbow (byteStringMakerFromEnvironment)

@@ -13,7 +13,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml
-resolver: lts-8.03
+resolver: lts-10.4
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -38,8 +38,6 @@ packages:
 
 # Dependency packages to be pulled from upstream that are not in the resolver
 extra-deps:
-# Pulling in containers for Data.Map.Lazy.Merge
-- containers-0.5.8.1
 # Not in LTS
 - git-embed-0.1.0
 
