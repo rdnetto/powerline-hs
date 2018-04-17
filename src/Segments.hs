@@ -39,7 +39,8 @@ segmentHandlers = Map.fromList [
         ("powerline.segments.shell.jobnum",                 Segments.Shell.jobNumSegment),
         ("powerline.segments.shell.last_pipe_status",       Segments.Shell.pipeStatusSegment),
         ("powerline.segments.shell.last_status",            Segments.Shell.lastStatusSegment),
-        ("powerline.segments.shell.mode",                   Segments.Shell.modeSegment)
+        ("powerline.segments.shell.mode",                   Segments.Shell.modeSegment),
+        ("powerline_gitstatus.gitstatus",                   Segments.VCS.gitCommitsAheadCountSegment)  -- It has as a different name format because the original powerline doesn't support git status, using format from https://github.com/jaspernbrouwer/powerline-gitstatus
     ]
 
 -- Execute a segment

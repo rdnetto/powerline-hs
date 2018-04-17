@@ -3,6 +3,7 @@
 module Segments.VCS where
 
 import Control.Monad (liftM2)
+import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import Data.Aeson as Aeson (Value(Bool, String))
 import Data.Aeson.Types (emptyArray)
 import qualified Data.Map as Map
@@ -46,6 +47,9 @@ gitBranchSegment args _ = do
 
     return . maybeToList $ liftM2 Segment (flip HighlightGroup Nothing <$> hlGroup) branch
 
+gitCommitsAheadCountSegment :: SegmentHandler
+gitCommitsAheadCountSegment = simpleHandler "gitstatus_ahead" gitCommitsAheadCount
+
 branchStatusGroup :: [VcsFileStatus] -> IO (Maybe String)
 branchStatusGroup blacklist = do
     d <- readProcess "git" ["status", "--porcelain"]
@@ -76,10 +80,21 @@ gitBranch = do
         Just "HEAD" -> readProcess "git" ["rev-parse", "--short", "HEAD"]
         x           -> return x
 
+gitCommitsAheadCount :: IO (Maybe String)
+gitCommitsAheadCount = runMaybeT $ do
+  branch <- MaybeT gitBranch
+  remote <- MaybeT $ readProcess "git" ["config", "--get", "branch." ++ branch ++ ".remote"]
+  count  <- MaybeT $ readProcess "git" ["rev-list", "--count", remote ++ "/" ++ branch ++ ".." ++ branch]
+  MaybeT . return . showNZ . read $ count
+
 gitStashCount :: IO (Maybe String)
-gitStashCount = (=<<) (showNZ . length . lines) <$> readProcess "git" ["stash", "list"] where
-    showNZ 0 = Nothing
-    showNZ x = Just $ show x
+gitStashCount = runMaybeT $ do
+  count <- MaybeT $ readProcess "git" ["stash", "list"]
+  MaybeT . return . showNZ . length . lines $ count
+
+showNZ :: Int -> Maybe String
+showNZ 0 = Nothing
+showNZ x = Just $ show x
 
 statusColors :: SegmentArgs -> Bool
 statusColors = unpackValue . Map.findWithDefault (Bool False) "status_colors"
