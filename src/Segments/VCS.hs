@@ -50,6 +50,9 @@ gitBranchSegment args _ = do
 gitCommitsAheadCountSegment :: SegmentHandler
 gitCommitsAheadCountSegment = simpleHandler "gitstatus_ahead" gitCommitsAheadCount
 
+gitCommitsBehindCountSegment :: SegmentHandler
+gitCommitsBehindCountSegment = simpleHandler "gitstatus_behind" gitCommitsBehindCount
+
 branchStatusGroup :: [VcsFileStatus] -> IO (Maybe String)
 branchStatusGroup blacklist = do
     d <- readProcess "git" ["status", "--porcelain"]
@@ -85,6 +88,13 @@ gitCommitsAheadCount = runMaybeT $ do
   branch <- MaybeT gitBranch
   remote <- MaybeT $ readProcess "git" ["config", "--get", "branch." ++ branch ++ ".remote"]
   count  <- MaybeT $ readProcess "git" ["rev-list", "--count", remote ++ "/" ++ branch ++ ".." ++ branch]
+  MaybeT . return . showNZ . read $ count
+
+gitCommitsBehindCount :: IO (Maybe String)
+gitCommitsBehindCount = runMaybeT $ do
+  branch <- MaybeT gitBranch
+  remote <- MaybeT $ readProcess "git" ["config", "--get", "branch." ++ branch ++ ".remote"]
+  count  <- MaybeT $ readProcess "git" ["rev-list", "--count", branch ++ ".." ++ remote ++ "/" ++ branch]
   MaybeT . return . showNZ . read $ count
 
 gitStashCount :: IO (Maybe String)

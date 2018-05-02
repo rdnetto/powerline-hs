@@ -53,15 +53,22 @@ The path of the shell script will depend on where you have Powerline installed a
 ### Git status
 Powerline only provides a basic git information segment. There is an implementation [here](https://github.com/jaspernbrouwer/powerline-gitstatus) that adds a more advance git status support. Powerline-hs follows powerline-gistatus convention and only provides partial support. 
 
-Enable with:
+Features supported:
+
+* n commits ahead. Colorscheme group `gitstatus_ahead`, e.g. `"gitstatus_ahead":{ "fg": "gray10", "bg": "gray2", "attrs": [] }`.
 
 ```
 {
-  "function": "powerline_gitstatus.gitstatus",
+  "function": "powerline_gitstatus.gitstatus_ahead",
   "priority": 40
 }
 ```
 
-Features supported:
+* n commits behind. Colorscheme group `gitstatus_behind`, e.g. `"gitstatus_behind":{ "fg": "gray10", "bg": "gray2", "attrs": [] }`.
 
-* n commits behind. Colorscheme group `gitstatus_ahead`, e.g. `"gitstatus_ahead":{ "fg": "gray10", "bg": "gray2", "attrs": [] }`.
+```
+{
+  "function": "powerline_gitstatus.gitstatus_behind",
+  "priority": 40
+}
+```
