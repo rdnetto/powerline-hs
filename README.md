@@ -81,3 +81,12 @@ Features supported:
   "priority": 40
 }
 ```
+
+* n unmerged files. Colorscheme group `gitstatus_unmerged`, e.g. `"gitstatus_unmerged":{ "fg": "gray10", "bg": "gray2", "attrs": [] }`.
+
+```
+{
+  "function": "powerline_gitstatus.gitstatus_unmerged",
+  "priority": 40
+}
+```
