@@ -72,3 +72,12 @@ Features supported:
   "priority": 40
 }
 ```
+
+* n staged files. Colorscheme group `gitstatus_staged`, e.g. `"gitstatus_staged":{ "fg": "gray10", "bg": "gray2", "attrs": [] }`.
+
+```
+{
+  "function": "powerline_gitstatus.gitstatus_staged",
+  "priority": 40
+}
+```

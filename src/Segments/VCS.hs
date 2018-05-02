@@ -53,6 +53,9 @@ gitCommitsAheadCountSegment = simpleHandler "gitstatus_ahead" gitCommitsAheadCou
 gitCommitsBehindCountSegment :: SegmentHandler
 gitCommitsBehindCountSegment = simpleHandler "gitstatus_behind" gitCommitsBehindCount
 
+gitStagedFilesCountSegment :: SegmentHandler
+gitStagedFilesCountSegment = simpleHandler "gitstatus_staged" gitStagedFilesCount
+
 branchStatusGroup :: [VcsFileStatus] -> IO (Maybe String)
 branchStatusGroup blacklist = do
     d <- readProcess "git" ["status", "--porcelain"]
@@ -96,6 +99,11 @@ gitCommitsBehindCount = runMaybeT $ do
   remote <- MaybeT $ readProcess "git" ["config", "--get", "branch." ++ branch ++ ".remote"]
   count  <- MaybeT $ readProcess "git" ["rev-list", "--count", branch ++ ".." ++ remote ++ "/" ++ branch]
   MaybeT . return . showNZ . read $ count
+
+gitStagedFilesCount :: IO (Maybe String)
+gitStagedFilesCount = runMaybeT $ do
+  count <- MaybeT $ readProcess "git" ["diff", "--staged", "--numstat"]
+  MaybeT . return . showNZ . length . lines $ count
 
 gitStashCount :: IO (Maybe String)
 gitStashCount = runMaybeT $ do
