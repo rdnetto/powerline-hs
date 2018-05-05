@@ -59,6 +59,9 @@ gitStagedFilesCountSegment = simpleHandler "gitstatus_staged" gitStagedFilesCoun
 gitUnmergedFilesCountSegment :: SegmentHandler
 gitUnmergedFilesCountSegment = simpleHandler "gitstatus_unmerged" gitUnmergedFilesCount
 
+gitChangedFilesCountSegment :: SegmentHandler
+gitChangedFilesCountSegment = simpleHandler "gitstatus_changed" gitChangedFilesCount
+
 branchStatusGroup :: [VcsFileStatus] -> IO (Maybe String)
 branchStatusGroup blacklist = do
     d <- readProcess "git" ["status", "--porcelain"]
@@ -111,6 +114,11 @@ gitStagedFilesCount = runMaybeT $ do
 gitUnmergedFilesCount :: IO (Maybe String)
 gitUnmergedFilesCount = runMaybeT $ do
   count <- MaybeT $ readProcess "git" ["diff", "--diff-filter=U", "--numstat"]
+  MaybeT . return . showNZ . length . lines $ count
+
+gitChangedFilesCount :: IO (Maybe String)
+gitChangedFilesCount = runMaybeT $ do
+  count <- MaybeT $ readProcess "git" ["status", "--porcelain"]
   MaybeT . return . showNZ . length . lines $ count
 
 gitStashCount :: IO (Maybe String)

@@ -90,3 +90,12 @@ Features supported:
   "priority": 40
 }
 ```
+
+* n changed files. Colorscheme group `gitstatus_changed`, e.g. `"gitstatus_changed":{ "fg": "gray10", "bg": "gray2", "attrs": [] }`.
+
+```
+{
+  "function": "powerline_gitstatus.gitstatus_changed",
+  "priority": 40
+}
+```
