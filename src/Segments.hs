@@ -45,7 +45,8 @@ segmentHandlers = Map.fromList [
         ("powerline_gitstatus.gitstatus_behind",            Segments.VCS.gitCommitsBehindCountSegment),
         ("powerline_gitstatus.gitstatus_staged",            Segments.VCS.gitStagedFilesCountSegment),
         ("powerline_gitstatus.gitstatus_unmerged",          Segments.VCS.gitUnmergedFilesCountSegment),
-        ("powerline_gitstatus.gitstatus_changed",           Segments.VCS.gitChangedFilesCountSegment)
+        ("powerline_gitstatus.gitstatus_changed",           Segments.VCS.gitChangedFilesCountSegment),
+        ("powerline_gitstatus.gitstatus_untracked",         Segments.VCS.gitUntrackedFilesCountSegment)
     ]
 
 -- Execute a segment
