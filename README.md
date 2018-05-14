@@ -99,3 +99,12 @@ Features supported:
   "priority": 40
 }
 ```
+
+* n untracked files. Colorscheme group `gitstatus_untracked`, e.g. `"gitstatus_untracked":{ "fg": "gray10", "bg": "gray2", "attrs": [] }`.
+
+```
+{
+  "function": "powerline_gitstatus.gitstatus_untracked",
+  "priority": 40
+}
+```
