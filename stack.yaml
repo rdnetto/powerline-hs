@@ -40,6 +40,8 @@ packages:
 extra-deps:
 # Not in LTS
 - git-embed-0.1.0
+# Fixes a glibc incompatibility
+- download-0.3.2.7
 
 # Override default flag values for local packages and extra-deps
 flags: {}
