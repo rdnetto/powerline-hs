@@ -58,12 +58,12 @@ battSegment args _ = do
 sysfsBatt :: IO (Maybe BattStatus)
 sysfsBatt = do
     let baseDir = "/sys/class/power_supply"
-    let hasEnergy f = doesFileExist $ baseDir </> f </> "energy_now"
+    let hasEnergy f = doesFileExist $ baseDir </> f </> "charge_now"
     suppliers <- filterM hasEnergy =<< getDirectoryContents baseDir
 
     let readF fname read' = suppliers `forM` \s -> read' <$> readFile (baseDir </> s </> fname)
-    energyNow  <- readF "energy_now" read
-    energyFull <- readF "energy_full" read
+    energyNow  <- readF "charge_now" read
+    energyFull <- readF "charge_full" read
     charging   <- readF "status" (not . isPrefixOf "Discharging")
 
     case energyNow of
