@@ -11,7 +11,7 @@ import Options.Applicative.Types
 import Safe (lastMay)
 import Text.ParserCombinators.ReadP (char, munch, munch1, sepBy1, readP_to_S)
 
-import Config.PowerlineResources (embedPowerlineVersion)
+import Config.PowerlineResources (getBuildEnvOr, embedPowerlineVersion)
 
 
 data CommandArgs = CommandArgs {
@@ -152,8 +152,8 @@ versionFlag = abortOption (InfoMsg v) flagInfo where
     flagInfo =  long "version" <> short 'v'
     v = concat [
         "Powerline-hs ",
-        $(embedGitDescribe ["--tags", "--dirty"]),
+        $(getBuildEnvOr "POWERLINE_HS_VER" $ embedGitDescribe ["--tags", "--dirty"]),
         ", compiled with resources from Powerline ",
-        $(embedPowerlineVersion)
+        $(getBuildEnvOr "POWERLINE_VER"    $ embedPowerlineVersion)
         ]
 
