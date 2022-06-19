@@ -22,7 +22,7 @@ import Util
 hostnameSegment :: SegmentHandler
 hostnameSegment args _ = do
     let onlyIfSsh     = argLookup args "only_if_ssh"   False
-    let excludeDomain = argLookup args "excludeDomain" False
+    let excludeDomain = argLookup args "exclude_domain" False
 
     enabled <- if onlyIfSsh
                then isJust <$> lookupEnv "SSH_CLIENT"
