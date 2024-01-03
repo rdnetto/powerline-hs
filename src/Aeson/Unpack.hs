@@ -4,7 +4,8 @@
 module Aeson.Unpack where
 
 import Data.Aeson (Value(..))
-import qualified Data.HashMap.Strict as HMS
+import qualified Data.Aeson.Key as K
+import qualified Data.Aeson.KeyMap as KM
 import qualified Data.Map.Strict as MapS
 import Data.Scientific (isInteger, toBoundedInteger, toRealFloat)
 import Data.Text (unpack)
@@ -42,6 +43,6 @@ instance ValueType a => ValueType [a] where
     unpackValue x = error $ show x ++ " is not an Array"
 
 instance ValueType v => ValueType (MapS.Map String v) where
-    unpackValue (Object hmap) = MapS.fromList $ bimap unpack unpackValue <$> HMS.toList hmap
+    unpackValue (Object hmap) = MapS.fromList $ bimap K.toString unpackValue <$> KM.toList hmap
     unpackValue x = error $ show x ++ " is not an Object"
 

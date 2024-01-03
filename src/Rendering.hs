@@ -3,12 +3,15 @@
 module Rendering(putChunks, renderSegments, RenderInfo(RenderInfo)) where
 
 import qualified Data.ByteString as BS
+import Data.Function ((&))
 import qualified Data.Map.Lazy as Map
 import Data.Maybe (catMaybes)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import Prelude hiding (lookup, div)
-import Rainbow
+import Rainbow (Radiant, color256, bold, italic, underline, fore, back, chunk)
+import qualified Rainbow as R
+import Rainbow.Types (Chunk(Chunk))
 import Safe
 
 import CommandArgs (RendererModule(..))
@@ -17,10 +20,8 @@ import Segments.Base (GradientWeight, Segment(..), HighlightGroup(..), modifySeg
 import Util hiding (replace)
 
 -- Applies formatting to a Chunk
-type ChunkFormatter = Chunk String -> Chunk String
+type ChunkFormatter = Chunk -> Chunk
 
--- Convenience type for a function which renders Chunk diff lists to ByteStrings
-type RainbowRenderer a = Chunk a -> [ByteString] -> [ByteString]
 
 data RenderInfo = RenderInfo {
     colourConfig :: CS.ColourConfig,
@@ -30,7 +31,7 @@ data RenderInfo = RenderInfo {
 } deriving Show
 
 -- Render a segment
-renderSegment :: RenderInfo -> Segment -> Chunk String
+renderSegment :: RenderInfo -> Segment -> Chunk
 renderSegment rinfo@RenderInfo{..} Segment{..} = res where
     HighlightGroup hGroup gradientWeight = segmentGroup
 
@@ -38,12 +39,12 @@ renderSegment rinfo@RenderInfo{..} Segment{..} = res where
           then id
           else formatChunk colourConfig gradientWeight . fromJustNote ("Could not find style with name: " ++ hlGroup segmentGroup) $ lookupStyle rinfo segmentGroup
 
-    res = fmt . chunk $ segmentText
+    res = fmt . chunk . T.pack $ segmentText
 renderSegment _ Divider{..} = res where
-    res = fore divFore . back divBack $ chunk divText
+    res = fore divFore . back divBack . chunk $ T.pack divText
 
 -- Renders a prompt of segments, including the required spaces and padding
-renderSegments :: RenderInfo -> Side -> [Segment] -> [Chunk String]
+renderSegments :: RenderInfo -> Side -> [Segment] -> [Chunk]
 renderSegments _ _ [] = []  -- making this explicit simplifies the logic for adding dividers below
 renderSegments rInfo@RenderInfo{..} s segments = res where
     -- NOTE: the equivalent logic is in powerline/renderer.py:540
@@ -107,10 +108,10 @@ renderSegments rInfo@RenderInfo{..} s segments = res where
 
 -- Helper method for rendering chunks
 -- Implements escaping rules for shell prompts. i.e. wraps the ANSI formatting literals in (startEsc, endEsc) pairs
-putChunks :: RendererModule -> RainbowRenderer BS.ByteString -> [Chunk String] -> IO ()
-putChunks rm renderer cs = do
+putChunks :: RendererModule -> [Chunk] -> IO ()
+putChunks rm cs = do
         BS.putStr $ encodeUtf8 startEsc
-        mapM_ BS.putStr . chunksToByteStrings renderer $ map2 (encodeUtf8 . surround . escaper . T.pack) cs
+        R.putChunks $ map (mapChunk (surround . escaper)) cs
         BS.putStr $ encodeUtf8 endEsc
     where
         surround s = endEsc <> s <> startEsc
@@ -118,6 +119,8 @@ putChunks rm renderer cs = do
                                            RMRaw  -> ("", "", id)
                                            RMBash -> ("\\[", "\\]", T.replace "\\" "\\\\")
                                            RMZsh  -> ("%{", "%}", T.replace "%" "%%")
+        mapChunk f (Chunk s y) = Chunk s (f y)
+
 
 formatChunk :: CS.ColourConfig -> Maybe GradientWeight -> CS.TerminalColour -> ChunkFormatter
 formatChunk CS.ColourConfig{..} gradWeight CS.TerminalColour{..} = fg' . bg' . attrs' where

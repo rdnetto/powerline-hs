@@ -52,6 +52,7 @@ executable powerline-hs
                        git-embed,
                        glob-posix,
                        network,
+                       network-bsd,
                        network-info,
                        optparse-applicative,
                        process,

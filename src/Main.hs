@@ -7,7 +7,7 @@ import qualified Data.Map.Lazy as Map
 import Data.Map.Merge.Lazy
 import Data.Maybe (catMaybes, fromMaybe)
 import Data.Time.LocalTime (getZonedTime)
-import Rainbow (byteStringMakerFromEnvironment)
+import Rainbow (Chunk)
 import Safe
 import System.Directory (getTemporaryDirectory)
 import System.Exit (exitFailure, ExitCode)
@@ -52,7 +52,8 @@ main = handleErrors $ parseArgs >>= \args -> do
     let numSpaces = fromMaybe 1 $ spaces themeCfg
     let divCfg = themeCfg & dividers & fromJustNote "Could not find dividers info"
     let renderInfo = RenderInfo colours cs divCfg numSpaces
-    putChunks' <- putChunks (rendererModule args) <$> byteStringMakerFromEnvironment
+    let putChunks' :: [Chunk] -> IO ()
+                   = putChunks (rendererModule args)
 
     case debugSegment args of
         Just segName -> do

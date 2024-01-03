@@ -13,7 +13,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml
-resolver: lts-10.4
+resolver: lts-21.25
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -40,6 +40,7 @@ packages:
 extra-deps:
 # Not in LTS
 - git-embed-0.1.0
+- glob-posix-0.2.0.1
 # Fixes a glibc incompatibility
 - download-0.3.2.7
 
