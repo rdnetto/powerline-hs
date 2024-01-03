@@ -4,7 +4,6 @@ module CommandArgs where
 
 import Data.Char (isDigit, isSpace)
 import qualified Data.Map.Strict as Map
-import Data.Monoid ((<>))
 import Git.Embed (embedGitDescribe)
 import Options.Applicative
 import Options.Applicative.Types

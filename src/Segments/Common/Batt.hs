@@ -9,11 +9,15 @@
 
 module Segments.Common.Batt where
 
-import Control.Monad (filterM)
+import Control.Monad (filterM, mzero, when)
+import Control.Monad.Extra (whenM)
+import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.List (isPrefixOf)
 import Data.Traversable (forM)
 import System.Directory (getDirectoryContents, doesFileExist)
 import System.FilePath ((</>))
+import System.Info (os)
 
 import Format
 import Segments.Base
@@ -56,17 +60,20 @@ battSegment args _ = do
 
 -- Retrieve battery status using sysfs (Linux)
 sysfsBatt :: IO (Maybe BattStatus)
-sysfsBatt = do
-    let baseDir = "/sys/class/power_supply"
-    let hasEnergy f = doesFileExist $ baseDir </> f </> "charge_now"
-    suppliers <- filterM hasEnergy =<< getDirectoryContents baseDir
+sysfsBatt = runMaybeT $ do
+  let baseDir = "/sys/class/power_supply"
+  let hasEnergy f = doesFileExist $ baseDir </> f </> "charge_now"
 
-    let readF fname read' = suppliers `forM` \s -> read' <$> readFile (baseDir </> s </> fname)
-    energyNow  <- readF "charge_now" read
-    energyFull <- readF "charge_full" read
-    charging   <- readF "status" (not . isPrefixOf "Discharging")
+  when (os /= "linux") mzero
+  whenM (liftIO $ doesFileExist baseDir) mzero
+  suppliers <- liftIO $ filterM hasEnergy =<< getDirectoryContents baseDir
 
-    case energyNow of
-         [] -> return Nothing
-         _  -> return . Just $ BattStatus (sum energyNow / sum energyFull) (or charging)
+  let readF fname read' = liftIO $ suppliers `forM` \s -> read' <$> readFile (baseDir </> s </> fname)
+  energyNow  <- readF "charge_now" read
+  energyFull <- readF "charge_full" read
+  charging   <- readF "status" (not . isPrefixOf "Discharging")
+
+  case energyNow of
+       [] -> mzero
+       _  -> return $ BattStatus (sum energyNow / sum energyFull) (or charging)
 
